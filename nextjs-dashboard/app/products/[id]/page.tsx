@@ -116,7 +116,7 @@ const products: Product[] = [
   },
 ]
 
-export default function ProductDetail({ params }: { params: { id: string } }) {
+export default async function ProductDetail({ params }: { params: { id: string } }) {
   const productId = parseInt(params.id)
   const product = products.find(p => p.id === productId)
   

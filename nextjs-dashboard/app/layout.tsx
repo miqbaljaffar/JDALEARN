@@ -51,7 +51,7 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="footer">
-          <p>&copy; 2024 MyApp. All rights reserved.</p>
+          <p>&copy; 2025 Ztyle. All rights reserved.</p>
         </footer>
       </body>
     </html>
