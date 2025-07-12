@@ -213,3 +213,77 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.nav-right-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.profile-icon {
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.profile-icon:hover {
+  color: #000;
+}
+
+.profile-icon svg {
+  width: 32px;
+  height: 32px;
+}
+.profile-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Mengubah ikon menjadi tombol yang bisa diklik */
+.profile-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.profile-icon:hover {
+  color: #000;
+}
+
+.profile-icon svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+/* Styling untuk menu dropdown */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px); /* Posisi di bawah ikon */
+  right: 0;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  min-width: 160px;
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Styling untuk link di dalam dropdown */
+.dropdown-menu a {
+  padding: 12px 20px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+  background-color: #f4f4f4;
+  color: #000;
+}
