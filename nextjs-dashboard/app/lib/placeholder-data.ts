@@ -1,6 +1,5 @@
 // This file contains placeholder data that you'll be replacing with real data in the Data Fetching chapter:
 // https://nextjs.org/learn/dashboard-app/fetching-data
-
 const users = [
   {
     id: '410544b2-4001-4271-9855-fec4b6a6442a',
@@ -145,48 +144,4 @@ const revenue = [
   { month: 'Dec', revenue: 4800 },
 ];
 
-const products = [
-  {
-    id: '1',
-    name: 'Kemeja Polo',
-    description: 'Kemeja polo katun premium untuk gaya kasual.',
-    price: 250000,
-    category: 'Pakaian Pria',
-    image_url: '/products/Polo.jpg',
-  },
-  {
-    id: '2',
-    name: 'Celana Chino',
-    description: 'Celana chino slim-fit untuk tampilan modern.',
-    price: 350000,
-    category: 'Pakaian Pria',
-    image_url: '/products/Chinos.jpg',
-  },
-  {
-    id: '3',
-    name: 'Celana Skena',
-    description: 'Celana kargo dengan banyak kantong untuk gaya urban.',
-    price: 400000,
-    category: 'Pakaian Pria',
-    image_url: '/products/Celana.jpg',
-  },
-  {
-    id: '4',
-    name: 'Knitwear',
-    description: 'Sweater rajut hangat untuk cuaca dingin.',
-    price: 450000,
-    category: 'Pakaian Unisex',
-    image_url: '/products/Knitwear.jpg',
-  },
-  {
-    id: '5',
-    name: 'Rok',
-    description: 'Rok lipit yang elegan untuk berbagai kesempatan.',
-    price: 300000,
-    category: 'Pakaian Wanita',
-    image_url: '/products/Rok.jpg',
-  },
-];
-
-
-export { users, customers, invoices, revenue, products };
+export { users, customers, invoices, revenue };
