@@ -216,3 +216,76 @@ export async function fetchFilteredCustomers(query: string) {
     throw new Error('Failed to fetch customer table.');
   }
 }
+
+const ITEMS_PER_PAGE_PRODUCTS = 6;
+export async function fetchFilteredProducts(
+  query: string,
+  currentPage: number,
+) {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE_PRODUCTS;
+
+  try {
+    // NOTE: This is a placeholder. You'll need to adapt this query to your actual database schema.
+    // For now, we are filtering from the hardcoded products array.
+    const products = [
+      { id: '1', name: 'Kemeja Polo', description: 'Kemeja polo katun premium...', price: 250000, category: 'Pakaian Pria', imageUrl: '/products/Polo.jpg' },
+      { id: '2', name: 'Celana Chino', description: 'Celana chino slim-fit...', price: 350000, category: 'Pakaian Pria', imageUrl: '/products/Chinos.jpg' },
+      { id: '3', name: 'Celana Skena', description: 'Celana kargo dengan banyak...', price: 400000, category: 'Pakaian Pria', imageUrl: '/products/Celana.jpg' },
+      { id: '4', name: 'Knitwear', description: 'Sweater rajut hangat...', price: 450000, category: 'Pakaian Unisex', imageUrl: '/products/Knitwear.jpg' },
+      { id: '5', name: 'Rok', description: 'Rok lipit yang elegan...', price: 300000, category: 'Pakaian Wanita', imageUrl: '/products/Rok.jpg' },
+    ];
+
+    const filteredProducts = products.filter(product => 
+        product.name.toLowerCase().includes(query.toLowerCase()) ||
+        product.description.toLowerCase().includes(query.toLowerCase())
+    );
+
+    return filteredProducts.slice(offset, offset + ITEMS_PER_PAGE_PRODUCTS);
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch products.');
+  }
+}
+
+export async function fetchProductsPage(query: string) {
+    try {
+        // Placeholder data
+        const products = [
+            { id: '1', name: 'Kemeja Polo', description: 'Kemeja polo katun premium...', price: 250000, category: 'Pakaian Pria', imageUrl: '/products/Polo.jpg' },
+            { id: '2', name: 'Celana Chino', description: 'Celana chino slim-fit...', price: 350000, category: 'Pakaian Pria', imageUrl: '/products/Chinos.jpg' },
+            { id: '3', name: 'Celana Skena', description: 'Celana kargo dengan banyak...', price: 400000, category: 'Pakaian Pria', imageUrl: '/products/Celana.jpg' },
+            { id: '4', name: 'Knitwear', description: 'Sweater rajut hangat...', price: 450000, category: 'Pakaian Unisex', imageUrl: '/products/Knitwear.jpg' },
+            { id: '5', name: 'Rok', description: 'Rok lipit yang elegan...', price: 300000, category: 'Pakaian Wanita', imageUrl: '/products/Rok.jpg' },
+        ];
+
+        const filteredProducts = products.filter(product => 
+            product.name.toLowerCase().includes(query.toLowerCase()) ||
+            product.description.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        const totalPages = Math.ceil(Number(filteredProducts.length) / ITEMS_PER_PAGE_PRODUCTS);
+        return totalPages;
+    } catch (error) {
+        console.error('Database Error:', error);
+        throw new Error('Failed to fetch total number of products.');
+    }
+}
+
+
+export async function fetchProductById(id: string) {
+  try {
+    // Placeholder data
+    const products = [
+        { id: '1', name: 'Kemeja Polo', description: 'Kemeja polo katun premium...', price: 250000, category: 'Pakaian Pria', imageUrl: '/products/Polo.jpg' },
+        { id: '2', name: 'Celana Chino', description: 'Celana chino slim-fit...', price: 350000, category: 'Pakaian Pria', imageUrl: '/products/Chinos.jpg' },
+        { id: '3', name: 'Celana Skena', description: 'Celana kargo dengan banyak...', price: 400000, category: 'Pakaian Pria', imageUrl: '/products/Celana.jpg' },
+        { id: '4', name: 'Knitwear', description: 'Sweater rajut hangat...', price: 450000, category: 'Pakaian Unisex', imageUrl: '/products/Knitwear.jpg' },
+        { id: '5', name: 'Rok', description: 'Rok lipit yang elegan...', price: 300000, category: 'Pakaian Wanita', imageUrl: '/products/Rok.jpg' },
+    ];
+    const product = products.find(p => p.id === id);
+    return product;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch product.');
+  }
+}
