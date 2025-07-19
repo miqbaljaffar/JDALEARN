@@ -287,3 +287,22 @@ body {
   background-color: #f4f4f4;
   color: #000;
 }
+.product-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  border: 1px solid #eee;
+  /* Tambahkan ini untuk layout flex */
+  display: flex;
+  flex-direction: column;
+}
+
+.product-info {
+  padding: 20px;
+  /* Tambahkan ini agar info produk mengisi ruang yang tersedia */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}

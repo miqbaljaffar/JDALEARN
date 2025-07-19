@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// MODEL UNTUK PENGGUNA (USER)
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String   @unique
+  password    String
+  phoneNumber String?
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+  cart        Cart?
+}
+
+// MODEL UNTUK KATEGORI PRODUK
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  products Product[]
+}
+
+// MODEL UNTUK PRODUK
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?  @db.Text
+  price         Float
+  imageUrl      String
+  features      Json // Menggunakan tipe Json untuk array
+  specifications Json?   
+
+  categoryId    Int
+  category      Category @relation(fields: [categoryId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+}
+
+// MODEL UNTUK KERANJANG BELANJA (CART)
+model Cart {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique 
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     CartItem[]
+}
+
+// MODEL UNTUK ITEM DALAM KERANJANG BELANJA
+model CartItem {
+  id         Int   @id @default(autoincrement())
+  quantity   Int   @default(1)
+
+  cartId     Int
+  cart       Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId  Int
+  product    Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+
+// MODEL UNTUK PESANAN (ORDER)
+model Order {
+  id          Int      @id @default(autoincrement())
+  totalAmount Float
+  status      String   @default("PENDING") 
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       OrderItem[]
+}
+
+// MODEL UNTUK ITEM DALAM PESANAN
+model OrderItem {
+  id        Int   @id @default(autoincrement())
+  quantity  Int
+  price     Float 
+
+  orderId   Int
+  order     Order @relation(fields: [orderId], references: [id])
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// MODEL UNTUK BERITA/ARTIKEL FASHION
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  excerpt   String   @db.Text
+  content   String?  @db.Text
+  imageUrl  String
+  slug      String   @unique 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

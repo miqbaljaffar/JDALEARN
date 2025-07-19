@@ -1,68 +1,50 @@
-import Link from 'next/link'
-import Image from 'next/image'
+import Link from 'next/link';
+import Image from 'next/image';
+import prisma from '@/lib/prisma'; // Impor instance Prisma
 
-// Data produk unggulan
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Kemeja Polo",
-    description: "Kemeja polo katun premium untuk gaya kasual.",
-    price: 250000,
-    category: "Pakaian Pria",
-    imageUrl: "/products/Polo.jpg"
-  },
-  {
-    id: 2,
-    name: "Celana Chino",
-    description: "Celana chino slim-fit untuk tampilan modern.",
-    price: 350000,
-    category: "Pakaian Pria",
-    imageUrl: "/products/Chinos.jpg"
-  },
-  {
-    id: 4,
-    name: "Knitwear",
-    description: "Sweater rajut hangat untuk cuaca dingin.",
-    price: 450000,
-    category: "Pakaian Unisex",
-    imageUrl: "/products/Knitwear.jpg"
-  },
-   {
-    id: 5,
-    name: "Rok",
-    description: "Rok lipit yang elegan untuk berbagai kesempatan.",
-    price: 300000,
-    category: "Pakaian Wanita",
-    imageUrl: "/products/Rok.jpg"
-  },
-]
+// Definisikan tipe data untuk produk dan berita
+interface Product {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  category: { name: string; };
+  imageUrl: string;
+}
 
-// Data berita fashion (pengganti testimoni)
-const fashionNews = [
-  {
-    id: 1,
-    title: "5 Tren Warna Pakaian yang Akan Hits di Tahun 2024",
-    excerpt: "Simak prediksi warna-warna yang akan mendominasi dunia fashion tahun ini, dari warna pastel lembut hingga warna-warna cerah yang berani.",
-    imageUrl: "/news/news1.jpg", // Ganti dengan path gambar yang sesuai
-    link: "/news/tren-warna-2024"
-  },
-  {
-    id: 2,
-    title: "Cara Mix and Match Pakaian Agar Tampil Stylish Setiap Hari",
-    excerpt: "Dapatkan tips praktis untuk memadupadankan koleksi pakaian Anda agar tidak monoton dan selalu tampil percaya diri.",
-    imageUrl: "/news/news2.jpg", // Ganti dengan path gambar yang sesuai
-    link: "/news/mix-and-match"
-  },
-  {
-    id: 3,
-    title: "Kembalinya Gaya Retro: Fashion Ikonik dari Era 90-an",
-    excerpt: "Gaya fashion tahun 90-an kembali populer! Temukan item-item kunci yang bisa Anda tambahkan ke lemari pakaian Anda.",
-    imageUrl: "/news/news3.jpg", // Ganti dengan path gambar yang sesuai
-    link: "/news/gaya-retro-90an"
-  }
-]
+interface News {
+  id: number;
+  title: string;
+  excerpt: string;
+  imageUrl: string;
+  slug: string;
+}
 
-export default function Home() {
+// Fungsi untuk mengambil data dari database
+async function getFeaturedData() {
+  const products = await prisma.product.findMany({
+    take: 4, // Ambil 4 produk unggulan
+    include: {
+      category: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  const news = await prisma.news.findMany({
+    take: 3, // Ambil 3 berita terbaru
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return { products, news };
+}
+
+export default async function Home() {
+  const { products, news } = await getFeaturedData();
+
   return (
     <div>
       {/* Hero Section */}
@@ -73,12 +55,12 @@ export default function Home() {
           Jelajahi Semua Produk
         </Link>
       </div>
-      
+
       {/* Featured Products Section */}
       <div style={{ marginTop: '60px' }}>
         <h2 style={{ textAlign: 'center', fontSize: '36px', marginBottom: '40px' }}>Produk Unggulan</h2>
         <div className="grid">
-          {featuredProducts.map((product) => (
+          {products.map((product: Product) => (
             <Link key={product.id} href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
               <div className="product-card">
                 <div className="product-image" style={{ position: 'relative', height: '200px' }}>
@@ -94,14 +76,14 @@ export default function Home() {
                   <p>{product.description}</p>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
                     <span className="price">Rp{product.price.toLocaleString('id-ID')}</span>
-                    <span style={{ 
-                      background: '#e5e7eb', 
-                      padding: '4px 12px', 
+                    <span style={{
+                      background: '#e5e7eb',
+                      padding: '4px 12px',
                       borderRadius: '20px',
                       fontSize: '12px',
                       color: '#374151'
                     }}>
-                      {product.category}
+                      {product.category.name}
                     </span>
                   </div>
                 </div>
@@ -110,13 +92,13 @@ export default function Home() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <Link href="/products" className="btn" style={{ 
+          <Link href="/products" className="btn" style={{
             background: 'transparent',
             color: '#000',
             border: '2px solid #000'
-            }}>
+          }}>
             Lihat Koleksi Lengkap
-            </Link>
+          </Link>
         </div>
       </div>
 
@@ -138,36 +120,36 @@ export default function Home() {
           </div>
         </div>
       </div>
-      
+
       {/* Fashion News Section */}
       <div style={{ marginTop: '80px' }}>
         <h2 style={{ textAlign: 'center', fontSize: '36px', marginBottom: '40px' }}>Berita Fashion Terkini</h2>
         <div className="grid">
-          {fashionNews.map((news) => (
-            <Link key={news.id} href={news.link} style={{ textDecoration: 'none' }}>
+          {news.map((newsItem: News) => (
+            <Link key={newsItem.id} href={`/news/${newsItem.slug}`} style={{ textDecoration: 'none' }}>
               <div className="product-card">
                 <div className="product-image" style={{ position: 'relative', height: '200px' }}>
                   <Image
-                    src={news.imageUrl}
-                    alt={news.title}
+                    src={newsItem.imageUrl}
+                    alt={newsItem.title}
                     fill
                     style={{ objectFit: 'cover' }}
                   />
                 </div>
                 <div className="product-info">
-                  <h3 style={{ marginBottom: '10px' }}>{news.title}</h3>
-                  <p style={{ color: '#555' }}>{news.excerpt}</p>
+                  <h3 style={{ marginBottom: '10px' }}>{newsItem.title}</h3>
+                  <p style={{ color: '#555' }}>{newsItem.excerpt}</p>
                 </div>
               </div>
             </Link>
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <Link href="/news" className="btn">
-                Lihat Semua Berita
-            </Link>
+          <Link href="/news" className="btn">
+            Lihat Semua Berita
+          </Link>
         </div>
       </div>
     </div>
-  )
+  );
 }
