@@ -15,7 +15,7 @@ export default function NotFound() {
       <div style={{
         fontSize: '120px',
         fontWeight: 'bold',
-        color: '#000',
+        color: '#007bff',
         marginBottom: '20px',
         animation: 'bounce 2s infinite'
       }}>
@@ -25,14 +25,14 @@ export default function NotFound() {
       <h1 style={{ 
         fontSize: '48px', 
         marginBottom: '20px',
-        color: '#000'
+        color: '#333'
       }}>
         Oops! Page Not Found
       </h1>
       
       <p style={{ 
         fontSize: '18px', 
-        color: '#555',
+        color: '#6c757d',
         marginBottom: '40px',
         maxWidth: '500px'
       }}>
@@ -52,8 +52,8 @@ export default function NotFound() {
         
         <Link href="/products" className="btn" style={{ 
           background: 'transparent',
-          color: '#000',
-          border: '2px solid #000'
+          color: '#007bff',
+          border: '2px solid #007bff'
         }}>
           Browse Products
         </Link>

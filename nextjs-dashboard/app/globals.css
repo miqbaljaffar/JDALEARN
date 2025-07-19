@@ -68,7 +68,7 @@ body {
 }
 
 .nav-links a:hover {
-  color: #000;
+  color: #007bff;
 }
 
 .nav-links a::after {
@@ -78,7 +78,7 @@ body {
   left: 0;
   width: 0;
   height: 2px;
-  background: #000;
+  background: #007bff;
   transition: width 0.3s ease;
 }
 
@@ -133,9 +133,9 @@ body {
 }
 
 .social-icons a:hover {
-    background: #333;
+    background: #007bff;
     color: #fff;
-    border-color: #333;
+    border-color: #007bff;
 }
 
 .footer-bottom {
@@ -169,18 +169,18 @@ body {
 .btn {
   display: inline-block;
   padding: 12px 30px;
-  background: #333; /* Warna tombol lebih lembut */
+  background: #007bff; 
   color: #fff;
   text-decoration: none;
   border-radius: 30px;
-  font-weight: 500; /* Sedikit lebih tipis */
+  font-weight: 500;
   transition: background 0.3s ease, transform 0.2s ease;
   border: none;
   cursor: pointer;
 }
 
 .btn:hover {
-  background: #555;
+  background: #0056b3;
   transform: translateY(-2px);
 }
 
@@ -193,20 +193,19 @@ body {
 
 .product-card {
   background: #fff;
-  border-radius: 12px; /* Sedikit lebih besar radiusnya */
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e5e7eb; /* Warna border lebih lembut */
+  border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Tambahkan transisi transform */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; 
 }
 
 .product-card:hover {
-  transform: translateY(-5px); /* Efek kartu terangkat */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.07); /* Bayangan lebih halus dan menyebar */
+  transform: translateY(-5px); 
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.07); 
 }
 
-/* Pastikan .product-info punya padding yang cukup */
 .product-info {
   padding: 20px;
   flex-grow: 1;
@@ -283,7 +282,7 @@ body {
 }
 
 .profile-icon:hover {
-  color: #000;
+  color: #007bff;
 }
 
 .profile-icon svg {
@@ -322,5 +321,5 @@ body {
 
 .dropdown-menu a:hover {
   background-color: #f4f4f4;
-  color: #000;
+  color: #007bff;
 }

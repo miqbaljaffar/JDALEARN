@@ -48,9 +48,9 @@ export default async function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <div className="hero">
-        <h1>Selamat Datang di Toko Pakaian Kami</h1>
-        <p>Temukan koleksi fashion terbaru dan terbaik di sini, dibuat dengan bahan berkualitas dan desain modern.</p>
+      <div className="hero text-center">
+        <h1 className="text-4xl font-bold mb-4">Selamat Datang di Toko Pakaian Kami</h1>
+        <p className="text-lg text-gray-600 mb-8">Temukan koleksi fashion terbaru dan terbaik di sini, dibuat dengan bahan berkualitas dan desain modern.</p>
         <Link href="/products" className="btn">
           Jelajahi Semua Produk
         </Link>
@@ -94,8 +94,8 @@ export default async function Home() {
         <div style={{ textAlign: 'center', marginTop: '40px' }}>
           <Link href="/products" className="btn" style={{
             background: 'transparent',
-            color: '#000',
-            border: '2px solid #000'
+            color: '#007bff',
+            border: '2px solid #007bff'
           }}>
             Lihat Koleksi Lengkap
           </Link>
@@ -103,7 +103,7 @@ export default async function Home() {
       </div>
 
       {/* Why Choose Us Section */}
-      <div style={{ marginTop: '80px', background: '#f9f9f9', padding: '60px 20px', borderRadius: '16px' }}>
+      <div style={{ marginTop: '80px', background: '#f8f9fa', padding: '60px 20px', borderRadius: '16px' }}>
         <h2 style={{ textAlign: 'center', fontSize: '36px', marginBottom: '40px' }}>Mengapa Memilih Kami?</h2>
         <div className="grid">
           <div className="card">
