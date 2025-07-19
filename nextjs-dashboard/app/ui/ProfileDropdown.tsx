@@ -1,19 +1,20 @@
+// app/ui/ProfileDropdown.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function ProfileDropdown() {
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Fungsi untuk membuka/menutup dropdown
   const toggleDropdown = () => {
     setIsOpen(!isOpen)
   }
 
-  // Efek untuk menutup dropdown saat klik di luar area menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -27,22 +28,45 @@ export default function ProfileDropdown() {
     }
   }, [dropdownRef])
 
+  if (status === "loading") {
+    return (
+      <button className="profile-icon">
+        <UserCircleIcon />
+      </button>
+    );
+  }
+
   return (
     <div className="profile-dropdown-container" ref={dropdownRef}>
-      {/* Tombol ikon profil */}
       <button onClick={toggleDropdown} className="profile-icon">
         <UserCircleIcon />
       </button>
 
-      {/* Menu dropdown, hanya muncul jika isOpen bernilai true */}
       {isOpen && (
         <div className="dropdown-menu">
-          <Link href="/profile" onClick={() => setIsOpen(false)}>
-            Account
-          </Link>
-          <Link href="/dashboard/" onClick={() => setIsOpen(false)}>
-            Dashboard
-          </Link>
+          {!session ? (
+            <Link href="/login" onClick={() => setIsOpen(false)}>
+              Login
+            </Link>
+          ) : (
+            <>
+              {session.user?.role === 'ADMIN' ? (
+                <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                  Dashboard
+                </Link>
+              ) : (
+                <Link href="/profile" onClick={() => setIsOpen(false)}>
+                  Account
+                </Link>
+              )}
+              <a onClick={() => {
+                signOut({ callbackUrl: '/' });
+                setIsOpen(false);
+              }} style={{ cursor: 'pointer' }}>
+                Logout
+              </a>
+            </>
+          )}
         </div>
       )}
     </div>

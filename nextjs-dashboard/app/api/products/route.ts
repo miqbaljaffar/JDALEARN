@@ -1,28 +1,53 @@
 // app/api/products/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server'; // 1. Impor NextRequest
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
-// Definisikan skema validasi untuk produk baru
+// Skema Zod untuk validasi produk (tetap sama)
 const productSchema = z.object({
   name: z.string().min(3, { message: "Nama produk harus memiliki setidaknya 3 karakter" }),
   price: z.number().positive({ message: "Harga harus bernilai positif" }),
   categoryId: z.number().int().positive({ message: "Kategori ID tidak valid" }),
-  // UBAH BARIS INI: Ganti .url() menjadi .min(1) untuk menerima path
   imageUrl: z.string().min(1, { message: "URL gambar diperlukan" }),
   description: z.string().optional(),
   features: z.array(z.string()).optional(),
   specifications: z.record(z.any()).optional(),
 });
 
-// Mengambil semua produk dari database
-export async function GET() {
+// 2. Modifikasi fungsi GET untuk menangani filter
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const categoryIds = searchParams.getAll('categoryId').map(id => parseInt(id)).filter(id => !isNaN(id));
+    const minPrice = searchParams.has('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
+    const maxPrice = searchParams.has('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
+
+    // Buat objek `where` untuk query Prisma
+    const where: any = {};
+
+    if (categoryIds.length > 0) {
+      where.categoryId = { in: categoryIds };
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+      if (minPrice !== undefined) {
+        where.price.gte = minPrice;
+      }
+      if (maxPrice !== undefined && maxPrice > 0) { // Pastikan maxPrice valid
+        where.price.lte = maxPrice;
+      }
+    }
+
     const products = await prisma.product.findMany({
+      where, // Terapkan kondisi filter
       include: {
         category: true,
       },
+      orderBy: {
+        createdAt: 'desc', // Urutkan berdasarkan produk terbaru
+      }
     });
     return NextResponse.json(products);
   } catch (error) {
@@ -31,12 +56,10 @@ export async function GET() {
   }
 }
 
-// Menambahkan produk baru ke database
+// Fungsi POST (tetap sama)
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    
-    // Validasi data menggunakan skema Zod
     const validatedData = productSchema.parse(data);
 
     const newProduct = await prisma.product.create({
@@ -52,7 +75,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    // Tangani error validasi dari Zod
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { message: "Input tidak valid", errors: error.errors },

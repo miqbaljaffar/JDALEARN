@@ -1,3 +1,11 @@
+/* app/globals.css */
+
+/* 1. Muat Tailwind CSS (dari file ui/global.css) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. Style kustom Anda */
 * {
   margin: 0;
   padding: 0;
@@ -5,16 +13,19 @@
 }
 
 body {
+  /* Font akan diatur dari layout.tsx, ini adalah fallback & pengaturan dasar */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
-  color: #000;
-  background: #fff;
+  color: #333; /* Warna teks lebih lembut dari hitam pekat */
+  background: #f8f9fa; /* Latar belakang off-white/abu-abu lembut */
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   background: #fff;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Bayangan lebih halus */
   position: sticky;
   top: 0;
   z-index: 100;
@@ -79,101 +90,142 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
-  min-height: calc(100vh - 140px);
+  flex-grow: 1;
 }
 
 .footer {
-  background: #000;
-  color: #fff;
-  text-align: center;
-  padding: 20px;
+  background: #fff; /* Footer putih agar serasi */
+  color: #555;
+  padding: 40px 20px;
   margin-top: auto;
+  border-top: 1px solid #eee; /* Garis batas halus */
 }
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.footer-section h3 {
+  font-size: 20px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.footer-section p {
+  color: #777;
+  line-height: 1.8;
+}
+
+.social-icons a {
+  color: #555;
+  text-decoration: none;
+  margin-right: 15px;
+  font-size: 18px;
+  border: 1px solid #ddd;
+  padding: 5px 10px;
+  border-radius: 50%;
+  transition: background 0.3s, color 0.3s;
+}
+
+.social-icons a:hover {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  color: #aaa;
+}
+
 
 .card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 8px; /* Sedikit kurangi radius */
   padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Bayangan lebih halus */
   border: 1px solid #eee;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .hero {
-  text-align: center;
+  /* Dihapus karena akan diatur langsung di page.tsx */
   padding: 60px 0;
-}
-
-.hero h1 {
-  font-size: 48px;
-  margin-bottom: 20px;
-  color: #000;
-}
-
-.hero p {
-  font-size: 20px;
-  color: #555;
-  margin-bottom: 30px;
 }
 
 .btn {
   display: inline-block;
   padding: 12px 30px;
-  background: #000;
+  background: #333; /* Warna tombol lebih lembut */
   color: #fff;
   text-decoration: none;
   border-radius: 30px;
-  font-weight: 600;
-  transition: background 0.3s ease, color 0.3s ease;
-  border: 2px solid #000;
+  font-weight: 500; /* Sedikit lebih tipis */
+  transition: background 0.3s ease, transform 0.2s ease;
+  border: none;
   cursor: pointer;
 }
 
 .btn:hover {
-  background: #fff;
-  color: #000;
+  background: #555;
+  transform: translateY(-2px);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Ukuran minmax disesuaikan */
   gap: 30px;
   margin-top: 40px;
 }
 
 .product-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 12px; /* Sedikit lebih besar radiusnya */
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-  border: 1px solid #eee;
+  border: 1px solid #e5e7eb; /* Warna border lebih lembut */
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Tambahkan transisi transform */
 }
 
 .product-card:hover {
-  transform: scale(1.05);
+  transform: translateY(-5px); /* Efek kartu terangkat */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.07); /* Bayangan lebih halus dan menyebar */
+}
+
+/* Pastikan .product-info punya padding yang cukup */
+.product-info {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-image {
   width: 100%;
-  height: 200px;
+  height: 250px;
   background: #f4f4f4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  font-size: 24px;
-  font-weight: bold;
+  position: relative;
 }
 
 .product-info {
   padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-info h3 {
@@ -202,6 +254,7 @@ body {
   .nav-links {
     margin-top: 20px;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
   }
   
@@ -217,28 +270,9 @@ body {
 .nav-right-section {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 20px; /* Kurangi gap */
 }
 
-.profile-icon {
-  color: #333;
-  transition: color 0.3s ease;
-}
-
-.profile-icon:hover {
-  color: #000;
-}
-
-.profile-icon svg {
-  width: 32px;
-  height: 32px;
-}
-.profile-dropdown-container {
-  position: relative;
-  display: inline-block;
-}
-
-/* Mengubah ikon menjadi tombol yang bisa diklik */
 .profile-icon {
   background: none;
   border: none;
@@ -258,10 +292,14 @@ body {
   display: block;
 }
 
-/* Styling untuk menu dropdown */
+.profile-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 10px); /* Posisi di bawah ikon */
+  top: calc(100% + 15px); /* Beri jarak lebih */
   right: 0;
   background-color: #fff;
   border-radius: 8px;
@@ -274,7 +312,6 @@ body {
   flex-direction: column;
 }
 
-/* Styling untuk link di dalam dropdown */
 .dropdown-menu a {
   padding: 12px 20px;
   text-decoration: none;
@@ -286,23 +323,4 @@ body {
 .dropdown-menu a:hover {
   background-color: #f4f4f4;
   color: #000;
-}
-.product-card {
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-  border: 1px solid #eee;
-  /* Tambahkan ini untuk layout flex */
-  display: flex;
-  flex-direction: column;
-}
-
-.product-info {
-  padding: 20px;
-  /* Tambahkan ini agar info produk mengisi ruang yang tersedia */
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
 }

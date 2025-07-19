@@ -10,19 +10,63 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// MODEL UNTUK PENGGUNA (USER)
+// MODEL UNTUK PENGGUNA (USER) - VERSI GABUNGAN
 model User {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String   @unique
-  password    String
-  phoneNumber String?
-  address     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  role          String    @default("CUSTOMER") 
+  phoneNumber   String?
+  address       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  orders      Order[]
-  cart        Cart?
+  // Relasi untuk NextAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Relasi untuk E-commerce
+  orders        Order[]
+  cart          Cart?
+}
+
+// MODEL UNTUK NEXTAUTH
+model Account {
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?   @db.Text
+  access_token       String?   @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?   @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 // MODEL UNTUK KATEGORI PRODUK
@@ -40,8 +84,8 @@ model Product {
   description   String?  @db.Text
   price         Float
   imageUrl      String
-  features      Json // Menggunakan tipe Json untuk array
-  specifications Json?   
+  features      Json
+  specifications Json?
 
   categoryId    Int
   category      Category @relation(fields: [categoryId], references: [id])
@@ -56,7 +100,7 @@ model Product {
 // MODEL UNTUK KERANJANG BELANJA (CART)
 model Cart {
   id        Int      @id @default(autoincrement())
-  userId    Int      @unique 
+  userId    Int      @unique
   user      User     @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
@@ -84,7 +128,7 @@ model CartItem {
 model Order {
   id          Int      @id @default(autoincrement())
   totalAmount Float
-  status      String   @default("PENDING") 
+  status      String   @default("PENDING")
 
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
@@ -99,7 +143,7 @@ model Order {
 model OrderItem {
   id        Int   @id @default(autoincrement())
   quantity  Int
-  price     Float 
+  price     Float
 
   orderId   Int
   order     Order @relation(fields: [orderId], references: [id])
@@ -115,7 +159,7 @@ model News {
   excerpt   String   @db.Text
   content   String?  @db.Text
   imageUrl  String
-  slug      String   @unique 
+  slug      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
