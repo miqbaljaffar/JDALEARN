@@ -1,21 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { sanitizeInput } from '@/lib/sanitizer'; // Import sanitizer
 
 interface Params {
   params: { id: string };
 }
 
 // Mengupdate kategori
-export async function PUT(request: Request, { params }: Params) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const id = parseInt(params.id);
     const { name } = await request.json();
     if (!name) {
       return NextResponse.json({ message: "Nama kategori diperlukan" }, { status: 400 });
     }
+    // Sanitasi nama kategori
+    const sanitizedName = sanitizeInput(name);
     const updatedCategory = await prisma.category.update({
       where: { id },
-      data: { name },
+      data: { name: sanitizedName },
     });
     return NextResponse.json(updatedCategory);
   } catch (error) {

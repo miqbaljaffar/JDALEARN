@@ -1,9 +1,9 @@
-import NextAuth, { AuthOptions } from 'next-auth'; // Impor AuthOptions
+import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
 import { compare } from 'bcrypt';
 
-export const authOptions: AuthOptions = { // Tambahkan tipe AuthOptions
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -30,7 +30,6 @@ export const authOptions: AuthOptions = { // Tambahkan tipe AuthOptions
           return null;
         }
         
-        // Kembalikan objek yang sesuai dengan tipe User yang telah kita definisikan ulang
         return {
           id: user.id,
           name: user.name,
@@ -42,20 +41,23 @@ export const authOptions: AuthOptions = { // Tambahkan tipe AuthOptions
   ],
   session: {
     strategy: 'jwt' as const,
+    maxAge: 24 * 60 * 60, // Sesi berakhir dalam 24 jam
   },
   callbacks: {
     jwt({ token, user }) {
+      // Saat login pertama kali (objek 'user' tersedia)
       if (user) {
-        // Pada saat login pertama kali, 'user' tersedia
-        token.id = user.id;
+        token.id = Number(user.id); 
         token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
-      // 'token' berasal dari callback jwt di atas
+      // Pastikan session.user ada sebelum dimodifikasi
       if (session.user) {
-        session.user.id = token.id;
+        // Ambil data dari token (yang diperkaya oleh callback jwt)
+        // dan pastikan tipenya sesuai dengan definisi di next-auth.d.ts
+        session.user.id = token.id; // token.id di sini sudah dipastikan number dari callback jwt
         session.user.role = token.role;
       }
       return session;

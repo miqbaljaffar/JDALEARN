@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hash } from 'bcrypt';
 import { z } from 'zod';
+import { sanitizeInput } from '@/lib/sanitizer'; // Import sanitizer
 
 // Skema validasi menggunakan Zod
 const userSchema = z.object({
@@ -13,11 +14,16 @@ const userSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password } = userSchema.parse(body);
+    // Validasi input terlebih dahulu
+    const validatedData = userSchema.parse(body);
+
+    // Sanitasi input setelah validasi
+    const sanitizedName = sanitizeInput(validatedData.name);
+    const sanitizedEmail = sanitizeInput(validatedData.email);
 
     // Cek apakah email sudah terdaftar
     const existingUser = await prisma.user.findUnique({
-      where: { email: email },
+      where: { email: sanitizedEmail },
     });
 
     if (existingUser) {
@@ -25,12 +31,12 @@ export async function POST(request: Request) {
     }
 
     // Hash password sebelum disimpan
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = await hash(validatedData.password, 10);
 
     const newUser = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: sanitizedName,
+        email: sanitizedEmail,
         password: hashedPassword,
       },
     });

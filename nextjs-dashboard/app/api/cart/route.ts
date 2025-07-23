@@ -1,0 +1,103 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
+// Fungsi getOrCreateCart tetap sama
+async function getOrCreateCart(userId: number) {
+  let cart = await prisma.cart.findUnique({
+    where: { userId },
+  });
+
+  if (!cart) {
+    cart = await prisma.cart.create({
+      data: { userId },
+    });
+  }
+  return cart;
+}
+
+// GET handler tetap sama
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const cart = await prisma.cart.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!cart || !cart.items) {
+      return NextResponse.json([]); 
+    }
+    
+    return NextResponse.json(cart.items);
+  } catch (error) {
+    console.error("Gagal mengambil item keranjang:", error);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+
+// --- PERBAIKAN DI FUNGSI POST ---
+export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { productId, quantity } = await request.json();
+    if (!productId || !quantity) {
+      return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
+    }
+    
+    // --- TAMBAHAN VALIDASI ---
+    // Cek dulu apakah produknya ada di database
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    // Jika produk tidak ditemukan, kirim error yang jelas
+    if (!product) {
+      return NextResponse.json({ message: 'Produk tidak ditemukan.' }, { status: 404 });
+    }
+    // --- AKHIR TAMBAHAN VALIDASI ---
+
+    const cart = await getOrCreateCart(session.user.id);
+
+    const cartItem = await prisma.cartItem.upsert({
+      where: {
+        cartId_productId: {
+          cartId: cart.id,
+          productId: productId,
+        },
+      },
+      update: {
+        quantity: {
+          increment: quantity,
+        },
+      },
+      create: {
+        cartId: cart.id,
+        productId: productId,
+        quantity: quantity,
+      },
+    });
+
+    return NextResponse.json(cartItem, { status: 200 });
+
+  } catch (error) {
+    console.error("Gagal melakukan upsert ke keranjang:", error);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}

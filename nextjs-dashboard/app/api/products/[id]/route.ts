@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma'; // Impor instance Prisma
+import prisma from '@/lib/prisma';
+import { sanitizeObject } from '@/lib/sanitizer'; // Import sanitizer
 
 interface Params {
   params: { id: string };
@@ -25,20 +26,23 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 // Mengupdate produk berdasarkan ID
-export async function PUT(request: Request, { params }: Params) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const id = parseInt(params.id);
     const data = await request.json();
+    // Sanitasi data sebelum diupdate
+    const sanitizedData = sanitizeObject(data);
+
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        name: data.name,
-        price: data.price,
-        imageUrl: data.imageUrl,
-        description: data.description,
-        features: data.features,
-        specifications: data.specifications,
-        categoryId: data.categoryId,
+        name: sanitizedData.name,
+        price: sanitizedData.price,
+        imageUrl: sanitizedData.imageUrl,
+        description: sanitizedData.description,
+        features: sanitizedData.features,
+        specifications: sanitizedData.specifications,
+        categoryId: sanitizedData.categoryId,
       },
     });
     return NextResponse.json(updatedProduct);

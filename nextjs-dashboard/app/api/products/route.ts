@@ -1,8 +1,9 @@
-import { NextResponse, NextRequest } from 'next/server'; // 1. Impor NextRequest
+import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { sanitizeObject } from '@/lib/sanitizer'; // Import sanitizer
 
-// Skema Zod untuk validasi produk (tetap sama)
+// Skema Zod untuk validasi produk
 const productSchema = z.object({
   name: z.string().min(3, { message: "Nama produk harus memiliki setidaknya 3 karakter" }),
   price: z.number().positive({ message: "Harga harus bernilai positif" }),
@@ -54,11 +55,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Fungsi POST (tetap sama)
+// Fungsi POST untuk membuat produk baru
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const validatedData = productSchema.parse(data);
+    // Sanitasi seluruh objek sebelum validasi
+    const sanitizedData = sanitizeObject(data);
+    const validatedData = productSchema.parse(sanitizedData);
 
     const newProduct = await prisma.product.create({
       data: {
@@ -68,7 +71,7 @@ export async function POST(request: Request) {
         description: validatedData.description,
         features: validatedData.features || [],
         specifications: validatedData.specifications || {},
-        categoryId: validatedData.categoryId, 
+        categoryId: validatedData.categoryId,
       },
     });
     return NextResponse.json(newProduct, { status: 201 });

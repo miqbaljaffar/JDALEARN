@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
+import AddToCartButton from '@/app/ui/products/AddToCartButton';
 
 // Mendefinisikan tipe data untuk produk
 interface Product {
@@ -11,12 +12,13 @@ interface Product {
   price: number;
   category: { name: string; };
   imageUrl: string;
-  features: string[];
-  specifications: { [key: string]: string } | null;
+  features: any; // Menggunakan 'any' agar lebih fleksibel saat casting
+  specifications: any; // Menggunakan 'any' agar lebih fleksibel saat casting
 }
 
 // Fungsi untuk mengambil data produk tunggal dari database
-async function getProduct(id: number): Promise<Product | null> {
+// Perubahan di sini: Tipe return diubah menjadi Promise<Product>
+async function getProduct(id: number): Promise<Product> {
   const product = await prisma.product.findUnique({
     where: { id },
     include: {
@@ -24,26 +26,22 @@ async function getProduct(id: number): Promise<Product | null> {
     },
   });
 
+  // Jika produk tidak ditemukan, hentikan eksekusi dan tampilkan halaman 404.
+  // Fungsi tidak akan pernah mencapai 'return' di bawah jika ini terjadi.
   if (!product) {
-    return null;
+    notFound();
   }
 
-  // Mengonversi Json ke tipe yang sesuai
-  return {
-    ...product,
-    features: product.features as string[],
-    specifications: product.specifications as { [key: string]: string } | null,
-  };
+  // Karena kita sudah memeriksa, di titik ini 'product' dijamin ada.
+  return product;
 }
 
 
 export default async function ProductDetail({ params }: { params: { id: string } }) {
-  const productId = parseInt(params.id);
+  const productId = parseInt(params.id, 10);
+  
+  // Sekarang TypeScript yakin 'product' tidak akan pernah null.
   const product = await getProduct(productId);
-
-  if (!product) {
-    notFound();
-  }
 
   return (
     <div>
@@ -100,21 +98,22 @@ export default async function ProductDetail({ params }: { params: { id: string }
               Rp{product.price.toLocaleString('id-ID')}
             </div>
 
-            <button className="btn" style={{ marginRight: '15px' }}>
+            <AddToCartButton productId={product.id} className="btn">
               Tambah ke Keranjang
-            </button>
-            <button className="btn" style={{ background: '#333', borderColor: '#333' }}>
+            </AddToCartButton>
+
+            <button className="btn" style={{ marginLeft: '15px', background: '#333', borderColor: '#333' }}>
               Beli Sekarang
             </button>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginTop: '30px' }}>
         <div className="card">
           <h2>Fitur</h2>
           <ul style={{ paddingLeft: '20px' }}>
-            {product.features.map((feature, index) => (
+            {(product.features as string[]).map((feature, index) => (
               <li key={index} style={{ marginBottom: '8px' }}>{feature}</li>
             ))}
           </ul>
@@ -124,7 +123,7 @@ export default async function ProductDetail({ params }: { params: { id: string }
           <div className="card">
             <h2>Spesifikasi</h2>
             <div>
-              {Object.entries(product.specifications).map(([key, value]) => (
+              {Object.entries(product.specifications as { [key: string]: string }).map(([key, value]) => (
                 <div key={key} style={{
                   display: 'flex',
                   justifyContent: 'space-between',

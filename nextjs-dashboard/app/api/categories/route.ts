@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { sanitizeInput } from '@/lib/sanitizer'; // Import sanitizer
 
 // Mengambil semua kategori
 export async function GET() {
@@ -19,8 +20,10 @@ export async function POST(request: Request) {
     if (!name) {
       return NextResponse.json({ message: "Nama kategori diperlukan" }, { status: 400 });
     }
+    // Sanitasi nama kategori
+    const sanitizedName = sanitizeInput(name);
     const newCategory = await prisma.category.create({
-      data: { name },
+      data: { name: sanitizedName },
     });
     return NextResponse.json(newCategory, { status: 201 });
   } catch (error) {

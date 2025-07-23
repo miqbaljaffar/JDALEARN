@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Filter from '@/app/ui/products/filter';
+// 1. Import komponen tombol yang sudah kita perbaiki
+import AddToCartButton from '@/app/ui/products/AddToCartButton';
 
-// Interface untuk produk dan kategori
+// Interface untuk produk dan kategori (tetap sama)
 interface Product {
   id: number;
   name: string;
@@ -19,7 +21,6 @@ interface Category {
   name: string;
 }
 
-// Menambahkan tipe untuk filter
 type Filters = {
   categoryIds: number[];
   priceRange: [number, number];
@@ -32,14 +33,12 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(null);
 
-  // Perbaikan 1: Tambahkan tipe untuk parameter 'currentFilters'
   const fetchProducts = useCallback(async (currentFilters: Filters) => {
     setIsLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       if (currentFilters && currentFilters.categoryIds.length > 0) {
-        // Perbaikan 2: Tambahkan tipe untuk parameter 'id'
         currentFilters.categoryIds.forEach((id: number) => params.append('categoryId', String(id)));
       }
       if (currentFilters) {
@@ -69,7 +68,7 @@ export default function ProductsPage() {
         if (!categoriesRes.ok) throw new Error('Gagal mengambil data kategori.');
         const categoriesData = await categoriesRes.json();
         setCategories(categoriesData);
-        fetchProducts(null); // Memuat semua produk pada awalnya
+        fetchProducts(null);
       } catch (err: any) {
         setError(err.message);
       }
@@ -138,13 +137,14 @@ export default function ProductsPage() {
                       Rp{product.price.toLocaleString('id-ID')}
                     </div>
                     <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
-                      <button 
-                        className="btn" 
+                      {/* 2. INI PERBAIKANNYA: Ganti tombol lama dengan komponen fungsional */}
+                      <AddToCartButton
+                        productId={product.id}
+                        className="btn"
                         style={{ flex: 1, background: '#333', borderColor: '#333' }}
-                        onClick={() => alert(`Menambahkan ${product.name} ke keranjang!`)}
                       >
-                        Checkout
-                      </button>
+                        Tambah Keranjang
+                      </AddToCartButton>
                       <Link 
                         href={`/products/${product.id}`} 
                         className="btn" 
