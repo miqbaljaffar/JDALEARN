@@ -1,4 +1,3 @@
-// app/dashboard/products/page.tsx
 'use client'
 
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';

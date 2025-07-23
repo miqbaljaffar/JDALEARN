@@ -1,5 +1,3 @@
-// app/api/products/route.ts
-
 import { NextResponse, NextRequest } from 'next/server'; // 1. Impor NextRequest
 import prisma from '@/lib/prisma';
 import { z } from 'zod';

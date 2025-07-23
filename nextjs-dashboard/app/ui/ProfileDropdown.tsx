@@ -1,4 +1,3 @@
-// app/ui/ProfileDropdown.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'

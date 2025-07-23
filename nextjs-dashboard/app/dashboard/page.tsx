@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx (Halaman Utama Dashboard Baru - Diperbaiki)
 'use client'
 
 // Menggunakan font 'poppins' yang sudah ada di proyek Anda

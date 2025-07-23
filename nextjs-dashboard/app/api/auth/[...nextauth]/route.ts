@@ -1,9 +1,7 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth, { AuthOptions } from 'next-auth'; // Impor AuthOptions
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
 import { compare } from 'bcrypt';
-// Tidak perlu mengimpor 'User' dari '@prisma/client' di sini lagi
 
 export const authOptions: AuthOptions = { // Tambahkan tipe AuthOptions
   providers: [

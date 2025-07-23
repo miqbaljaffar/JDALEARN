@@ -1,5 +1,3 @@
-// app/profile/page.tsx
-
 'use client'
 
 import { useSession, signOut } from 'next-auth/react';

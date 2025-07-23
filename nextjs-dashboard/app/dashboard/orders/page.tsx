@@ -1,4 +1,3 @@
-// app/dashboard/orders/page.tsx
 'use client'
 
 // Dummy data untuk pesanan
