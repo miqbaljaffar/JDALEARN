@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import AddToCartButton from '@/app/ui/products/AddToCartButton';
+import BuyNowButton from '@/app/ui/products/BuyNowButton';
 
 // Mendefinisikan tipe data untuk produk
 interface Product {
@@ -17,7 +18,6 @@ interface Product {
 }
 
 // Fungsi untuk mengambil data produk tunggal dari database
-// Perubahan di sini: Tipe return diubah menjadi Promise<Product>
 async function getProduct(id: number): Promise<Product> {
   const product = await prisma.product.findUnique({
     where: { id },
@@ -26,112 +26,88 @@ async function getProduct(id: number): Promise<Product> {
     },
   });
 
-  // Jika produk tidak ditemukan, hentikan eksekusi dan tampilkan halaman 404.
-  // Fungsi tidak akan pernah mencapai 'return' di bawah jika ini terjadi.
+  // Jika produk tidak ditemukan, tampilkan halaman 404
   if (!product) {
     notFound();
   }
 
-  // Karena kita sudah memeriksa, di titik ini 'product' dijamin ada.
   return product;
 }
 
 
 export default async function ProductDetail({ params }: { params: { id: string } }) {
   const productId = parseInt(params.id, 10);
-  
-  // Sekarang TypeScript yakin 'product' tidak akan pernah null.
   const product = await getProduct(productId);
 
   return (
     <div>
       <Link
         href="/products"
-        style={{
-          display: 'inline-block',
-          marginBottom: '20px',
-          color: '#000',
-          textDecoration: 'none'
-        }}
+        className="inline-block mb-5 text-gray-800 hover:text-blue-600 transition-colors"
       >
-        ← Kembali ke Produk
+        ← Kembali ke Semua Produk
       </Link>
 
       <div className="card">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          {/* Kolom Gambar */}
           <div>
-            <div style={{
-              width: '100%',
-              position: 'relative',
-              height: '350px',
-              background: '#f4f4f4',
-              borderRadius: '12px',
-              overflow: 'hidden'
-            }}>
+            <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
               <Image
                 src={product.imageUrl}
                 alt={`Gambar produk ${product.name}`}
                 fill
-                style={{ objectFit: 'cover' }}
+                className="object-cover"
               />
             </div>
-
-            <span style={{
-              background: '#eee',
-              padding: '6px 16px',
-              borderRadius: '20px',
-              fontSize: '14px',
-              color: '#333',
-              display: 'inline-block',
-              marginTop: '20px'
-            }}>
+            <span className="inline-block bg-gray-200 text-gray-700 text-sm font-medium px-4 py-1 rounded-full mt-6">
               {product.category.name}
             </span>
           </div>
 
+          {/* Kolom Info Produk */}
           <div>
-            <h1 style={{ marginBottom: '10px' }}>{product.name}</h1>
-            <p style={{ fontSize: '18px', color: '#555', marginBottom: '20px' }}>
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">{product.name}</h1>
+            <p className="text-lg text-gray-600 mb-6">
               {product.description}
             </p>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#000', marginBottom: '30px' }}>
+            <div className="text-4xl font-bold text-gray-900 mb-8">
               Rp{product.price.toLocaleString('id-ID')}
             </div>
 
-            <AddToCartButton productId={product.id} className="btn">
-              Tambah ke Keranjang
-            </AddToCartButton>
+            {/* --- PERBAIKAN TOMBOL --- */}
+            <div className="flex items-center gap-4">
+              <AddToCartButton productId={product.id} className="btn flex-1">
+                Tambah ke Keranjang
+              </AddToCartButton>
 
-            <button className="btn" style={{ marginLeft: '15px', background: '#333', borderColor: '#333' }}>
-              Beli Sekarang
-            </button>
+              <BuyNowButton productId={product.id} className="btn flex-1 bg-gray-800 hover:bg-gray-700">
+                Beli Sekarang
+              </BuyNowButton>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginTop: '30px' }}>
+      {/* Kolom Fitur dan Spesifikasi */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         <div className="card">
-          <h2>Fitur</h2>
-          <ul style={{ paddingLeft: '20px' }}>
+          <h2 className="text-2xl font-bold mb-4">Fitur Unggulan</h2>
+          <ul className="list-disc list-inside space-y-2 text-gray-700">
             {(product.features as string[]).map((feature, index) => (
-              <li key={index} style={{ marginBottom: '8px' }}>{feature}</li>
+              <li key={index}>{feature}</li>
             ))}
           </ul>
         </div>
 
         {product.specifications &&
           <div className="card">
-            <h2>Spesifikasi</h2>
-            <div>
+            <h2 className="text-2xl font-bold mb-4">Spesifikasi Teknis</h2>
+            <div className="space-y-3">
               {Object.entries(product.specifications as { [key: string]: string }).map(([key, value]) => (
-                <div key={key} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '12px 0',
-                  borderBottom: '1px solid #eee'
-                }}>
-                  <span style={{ fontWeight: '600' }}>{key}:</span>
-                  <span style={{ color: '#555' }}>{value}</span>
+                <div key={key} className="flex justify-between border-b pb-2">
+                  <span className="font-semibold text-gray-800">{key}:</span>
+                  <span className="text-gray-600">{value}</span>
                 </div>
               ))}
             </div>

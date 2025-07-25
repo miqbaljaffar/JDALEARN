@@ -1,85 +1,42 @@
-"use client";
 import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div style={{ 
-      textAlign: 'center',
-      padding: '60px 20px',
-      minHeight: '60vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        fontSize: '120px',
-        fontWeight: 'bold',
-        color: '#007bff',
-        marginBottom: '20px',
-        animation: 'bounce 2s infinite'
-      }}>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center p-5 text-center">
+      
+      {/* Animasi menggunakan kelas 'animate-bounce' dari Tailwind */}
+      <div className="animate-bounce text-8xl font-bold text-blue-500 md:text-9xl">
         404
       </div>
       
-      <h1 style={{ 
-        fontSize: '48px', 
-        marginBottom: '20px',
-        color: '#333'
-      }}>
-        Oops! Page Not Found
+      {/* Ukuran teks responsif (text-4xl di mobile, md:text-5xl di desktop) */}
+      <h1 className="mt-8 text-4xl font-bold text-gray-800 md:text-5xl">
+        Oops! Halaman Tidak Ditemukan
       </h1>
       
-      <p style={{ 
-        fontSize: '18px', 
-        color: '#6c757d',
-        marginBottom: '40px',
-        maxWidth: '500px'
-      }}>
-        The page you're looking for doesn't exist. It might have been moved, 
-        deleted, or you entered the wrong URL.
+      <p className="mt-4 max-w-md text-base text-gray-600 md:text-lg">
+        Halaman yang Anda cari tidak ada. Mungkin telah dipindahkan, 
+        dihapus, atau Anda salah memasukkan URL.
       </p>
       
-      <div style={{ 
-        display: 'flex', 
-        gap: '20px',
-        flexWrap: 'wrap',
-        justifyContent: 'center'
-      }}>
+      {/* Tombol dengan styling konsisten dari kelas 'btn' */}
+      <div className="mt-10 flex flex-wrap justify-center gap-4">
         <Link href="/" className="btn">
-          Go Home
+          Kembali ke Beranda
         </Link>
         
-        <Link href="/products" className="btn" style={{ 
-          background: 'transparent',
-          color: '#007bff',
-          border: '2px solid #007bff'
-        }}>
-          Browse Products
+        <Link 
+          href="/products" 
+          className="btn border-2 border-blue-500 bg-transparent text-blue-500 hover:bg-blue-50"
+        >
+          Lihat Semua Produk
         </Link>
       </div>
       
-      <div style={{ 
-        marginTop: '60px',
-        fontSize: '80px',
-        opacity: '0.3'
-      }}>
+      <div className="mt-16 text-6xl opacity-30">
         🚀
       </div>
-      
-      <style jsx>{`
-        @keyframes bounce {
-          0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0);
-          }
-          40% {
-            transform: translateY(-10px);
-          }
-          60% {
-            transform: translateY(-5px);
-          }
-        }
-      `}</style>
+
     </div>
   )
 }

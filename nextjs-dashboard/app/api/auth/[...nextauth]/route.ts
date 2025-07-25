@@ -35,30 +35,62 @@ export const authOptions: AuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
         };
       }
     })
   ],
   session: {
     strategy: 'jwt' as const,
-    maxAge: 24 * 60 * 60, // Sesi berakhir dalam 24 jam
+    maxAge: 24 * 60 * 60,
   },
   callbacks: {
-    jwt({ token, user }) {
-      // Saat login pertama kali (objek 'user' tersedia)
+    /**
+     * Callback JWT: Mengelola isi token.
+     */
+    async jwt({ token, user }) {
       if (user) {
         token.id = Number(user.id); 
         token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
+        token.phoneNumber = user.phoneNumber;
+        token.address = user.address;
+        return token;
       }
+      // Untuk request berikutnya, pastikan token.id ada sebelum query.
+      if (!token.id) return token;
+
+      // Ambil data terbaru dari database untuk memastikan sesi selalu fresh.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: Number(token.id) }, 
+      });
+
+      // Jika user ada di DB, perbarui token dengan data terbaru.
+      if (dbUser) {
+        token.name = dbUser.name;
+        token.role = dbUser.role;
+        token.phoneNumber = dbUser.phoneNumber;
+        token.address = dbUser.address;
+      }
+      
       return token;
     },
+
+    /**
+     * Callback Session: Mengelola data sesi yang dikirim ke client.
+     */
     session({ session, token }) {
-      // Pastikan session.user ada sebelum dimodifikasi
+      // Salin data dari token (yang sudah dijamin fresh) ke objek session.
       if (session.user) {
-        // Ambil data dari token (yang diperkaya oleh callback jwt)
-        // dan pastikan tipenya sesuai dengan definisi di next-auth.d.ts
-        session.user.id = token.id; // token.id di sini sudah dipastikan number dari callback jwt
+        // **PERBAIKAN KEDUA:** Konversi juga di sini untuk memastikan tipe data cocok.
+        session.user.id = Number(token.id); 
         session.user.role = token.role;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.phoneNumber = token.phoneNumber;
+        session.user.address = token.address;
       }
       return session;
     },

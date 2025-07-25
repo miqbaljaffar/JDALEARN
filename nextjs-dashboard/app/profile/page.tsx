@@ -2,116 +2,206 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 
-// Definisikan tipe untuk user session
-interface UserSession {
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
+// Definisikan tipe untuk data form yang lebih lengkap
+interface ProfileFormData {
+  name: string;
+  phoneNumber: string;
+  address: string;
 }
 
-export default function Profile() {
+export default function ProfilePage() {
   const { data: session, status, update } = useSession();
-  const [user, setUser] = useState<UserSession | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '' });
+  const router = useRouter();
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<ProfileFormData>({
+    name: '',
+    phoneNumber: '',
+    address: '',
+  });
+
+  // Efek untuk mengisi form saat data sesi tersedia atau berubah
   useEffect(() => {
     if (session?.user) {
-      setUser(session.user);
-      setFormData({ 
-        name: session.user.name ?? '', 
-        email: session.user.email ?? '' 
+      setFormData({
+        name: session.user.name ?? '',
+        phoneNumber: (session.user as any).phoneNumber ?? '',
+        address: (session.user as any).address ?? '',
       });
     }
   }, [session]);
-  
-  const handleEditToggle = () => setIsEditing(!isEditing);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  
-  // Fungsi untuk update data user (placeholder)
-  const handleUpdate = async (e: FormEvent) => {
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Di sini Anda akan memanggil API untuk update data user di database
-    // Contoh: await fetch('/api/user/update', { ... });
-    
-    // Setelah berhasil, update sesi NextAuth
-    await update({ name: formData.name });
-    setIsEditing(false);
-    alert('Profil berhasil diperbarui!');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Gagal memperbarui profil.');
+      }
+
+      // --- PERBAIKAN UTAMA ADA DI SINI ---
+      // Cukup panggil fungsi update() tanpa argumen.
+      // Ini akan secara otomatis memicu NextAuth untuk mengambil ulang data sesi dari server
+      // dengan data terbaru yang sudah kita simpan di database.
+      await update();
+      
+      alert('Profil berhasil diperbarui!');
+      setIsEditing(false);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // ... sisa kode komponen tetap sama ...
   if (status === "loading") {
-    return <div className="card">Memuat profil...</div>;
+    return <div className="card text-center">Memuat profil Anda...</div>;
   }
 
-  if (!session) {
-    return (
-      <div className="card">
-        <h1>Akses Ditolak</h1>
-        <p>Anda harus login untuk melihat halaman ini.</p>
-      </div>
-    );
+  if (status === "unauthenticated") {
+    router.push('/login');
+    return null;
   }
+  
+  const renderAvatar = () => (
+    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-4xl font-bold text-gray-600">
+      {session?.user?.name?.charAt(0).toUpperCase()}
+    </div>
+  );
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl">
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1>Profil Akun</h1>
-            <button onClick={() => signOut({ callbackUrl: '/' })} className="btn" style={{ background: '#e53e3e' }}>
-                Logout
-            </button>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Profil Akun</h1>
+          <button onClick={() => signOut({ callbackUrl: '/' })} className="btn bg-red-600 hover:bg-red-700">
+            Logout
+          </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px', marginTop: '20px' }}>
-          {/* ... (kode avatar tetap sama) ... */}
-          <div style={{ 
-            width: '100px', 
-            height: '100px',
-            marginRight: '30px',
-            background: '#e0e0e0',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '40px',
-            fontWeight: 'bold',
-            color: '#555'
-          }}>
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            {!isEditing ? (
-              <>
-                <h1 style={{ marginBottom: '10px' }}>{user?.name}</h1>
-                <p>{user?.email}</p>
-              </>
-            ) : (
-              <form onSubmit={handleUpdate}>
-                <input 
+      </div>
+
+      <div className="card">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+            <div className="flex flex-col items-center text-center md:col-span-1">
+              {renderAvatar()}
+              <h2 className="mt-4 text-xl font-semibold">{session?.user?.name}</h2>
+              <p className="text-gray-500">{session?.user?.email}</p>
+              {!isEditing && (
+                 <button type="button" onClick={() => setIsEditing(true)} className="btn mt-6">
+                   Edit Profil
+                 </button>
+              )}
+            </div>
+
+            <div className="space-y-6 md:col-span-2">
+              {error && <p className="rounded-md bg-red-100 p-3 text-center text-red-600">{error}</p>}
+              <div>
+                <label htmlFor="name" className="mb-1 block font-medium">Nama Lengkap</label>
+                <input
+                  id="name"
                   name="name"
+                  type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  style={{ fontSize: '24px', fontWeight: 'bold', border: '1px solid #ccc', padding: '5px', borderRadius: '4px' }}
+                  disabled={!isEditing}
+                  className="input-field"
                 />
-                <p style={{ marginTop: '10px' }}>{user?.email} (Email tidak dapat diubah)</p>
-              </form>
-            )}
-          </div>
-        </div>
-        
-        {!isEditing ? (
-            <button onClick={handleEditToggle} className="btn">Edit Identitas</button>
-        ) : (
-            <div>
-                <button onClick={handleUpdate} className="btn" style={{ marginRight: '10px' }}>Simpan Perubahan</button>
-                <button onClick={handleEditToggle} className="btn" style={{ background: 'transparent', color: '#333', border: '1px solid #333' }}>Batal</button>
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="mb-1 block font-medium">Alamat Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={session?.user?.email ?? ''}
+                  disabled
+                  className="input-field bg-gray-100"
+                  title="Email tidak dapat diubah"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phoneNumber" className="mb-1 block font-medium">Nomor Telepon</label>
+                <input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="e.g., 08123456789"
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address" className="mb-1 block font-medium">Alamat</label>
+                <textarea
+                  id="address"
+                  name="address"
+                  rows={4}
+                  value={formData.address}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="Masukkan alamat lengkap Anda"
+                  className="input-field"
+                />
+              </div>
+              
+              {isEditing && (
+                <div className="flex gap-4">
+                  <button type="submit" className="btn flex-1" disabled={isLoading}>
+                    {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </button>
+                  <button type="button" onClick={() => setIsEditing(false)} className="btn flex-1 border-2 border-gray-300 bg-transparent text-gray-800 hover:bg-gray-100">
+                    Batal
+                  </button>
+                </div>
+              )}
             </div>
-        )}
+          </div>
+        </form>
       </div>
+      <style jsx>{`
+        .input-field {
+          width: 100%;
+          padding: 10px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+          transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .input-field:disabled {
+          background-color: #f3f4f6;
+          cursor: not-allowed;
+          color: #6b7280;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+      `}</style>
     </div>
   );
 }

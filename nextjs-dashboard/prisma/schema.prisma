@@ -130,6 +130,10 @@ model Order {
   totalAmount Float
   status      String   @default("PENDING")
 
+  // 👇 ADD THESE TWO LINES
+  shippingAddress String   // Menyimpan alamat pengiriman pesanan
+  paymentMethod   String   // Menyimpan metode pembayaran yang dipilih
+
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
 

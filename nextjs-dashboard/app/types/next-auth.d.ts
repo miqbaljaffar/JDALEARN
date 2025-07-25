@@ -5,29 +5,34 @@ import { DefaultSession } from 'next-auth';
 declare module 'next-auth' {
   /**
    * Tipe User diperbarui untuk mencocokkan skema Prisma Anda.
-   * 'id' sekarang adalah 'number' dan 'role' ditambahkan.
    */
   interface User {
     id: number;
     role?: string;
+    phoneNumber?: string | null;
+    address?: string | null;
   }
 
   /**
-   * Tipe Session diperbarui untuk menyertakan 'id' sebagai 'number' dan 'role'.
+   * Tipe Session diperbarui untuk menyertakan properti baru.
    */
   interface Session extends DefaultSession {
     user?: {
       id: number;
       role?: string;
+      phoneNumber?: string | null;
+      address?: string | null;
     } & DefaultSession['user'];
   }
 }
 
 // Mendefinisikan ulang token JWT untuk menyertakan properti kustom
 declare module 'next-auth/jwt' {
-  /** Token diperbarui untuk membawa 'id' dan 'role' */
+  /** Token diperbarui untuk membawa data tambahan */
   interface JWT {
     id: number;
     role?: string;
+    phoneNumber?: string | null;
+    address?: string | null;
   }
 }

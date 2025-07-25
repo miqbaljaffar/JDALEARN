@@ -101,3 +101,52 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { productId, quantity } = await request.json();
+    if (!productId || quantity === undefined) {
+      return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
+    }
+
+    const cart = await prisma.cart.findUnique({ where: { userId: session.user.id } });
+    if (!cart) {
+      return NextResponse.json({ message: 'Keranjang tidak ditemukan' }, { status: 404 });
+    }
+
+    // Jika kuantitas 0, hapus item dari keranjang
+    if (quantity <= 0) {
+      await prisma.cartItem.delete({
+        where: { cartId_productId: { cartId: cart.id, productId: productId } },
+      });
+      return NextResponse.json({ message: 'Item dihapus' }, { status: 200 });
+    }
+
+    // Jika kuantitas lebih dari 0, update kuantitasnya
+    const updatedItem = await prisma.cartItem.update({
+      where: {
+        cartId_productId: {
+          cartId: cart.id,
+          productId: productId,
+        },
+      },
+      data: {
+        quantity: quantity,
+      },
+      include: {
+        product: true,
+      }
+    });
+
+    return NextResponse.json(updatedItem, { status: 200 });
+
+  } catch (error) {
+    console.error("Gagal mengupdate item keranjang:", error);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}
