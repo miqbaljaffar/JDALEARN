@@ -1,9 +1,7 @@
 'use client'
 
-// Menggunakan font 'poppins' yang sudah ada di proyek Anda
 import { poppins } from '@/app/ui/fonts'; 
 
-// Definisikan komponen Card langsung di sini untuk sementara
 function Card({ title, value, type }: { title: string; value: string | number; type: 'invoices' | 'customers' | 'pending' | 'collected' }) {
     return (
         <div className="rounded-xl bg-gray-50 p-2 shadow-sm">

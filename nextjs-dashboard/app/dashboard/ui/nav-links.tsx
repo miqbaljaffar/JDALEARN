@@ -15,6 +15,7 @@ const links = [
   { name: 'Products', href: '/dashboard/products', icon: ShoppingBagIcon },
   { name: 'Categories', href: '/dashboard/categories', icon: TagIcon },
   { name: 'Orders', href: '/dashboard/orders', icon: ClipboardDocumentListIcon },
+  { name: 'News', href: '/dashboard/news', icon: ClipboardDocumentListIcon },
 ];
 
 export default function NavLinks() {

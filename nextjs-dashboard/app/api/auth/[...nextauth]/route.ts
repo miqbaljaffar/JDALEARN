@@ -15,21 +15,16 @@ export const authOptions: AuthOptions = {
         if (!credentials?.email || !credentials.password) {
           return null;
         }
-
         const user = await prisma.user.findUnique({
           where: { email: credentials.email }
         });
-
         if (!user || !user.password) {
           return null;
         }
-
         const isPasswordValid = await compare(credentials.password, user.password);
-
         if (!isPasswordValid) {
           return null;
         }
-        
         return {
           id: user.id,
           name: user.name,
@@ -46,11 +41,10 @@ export const authOptions: AuthOptions = {
     maxAge: 24 * 60 * 60,
   },
   callbacks: {
-    /**
-     * Callback JWT: Mengelola isi token.
-     */
     async jwt({ token, user }) {
+      // Saat login awal, `user` object tersedia
       if (user) {
+        // SOLUSI ERROR 2: Pastikan konversi ke Number
         token.id = Number(user.id); 
         token.role = user.role;
         token.name = user.name;
@@ -59,38 +53,38 @@ export const authOptions: AuthOptions = {
         token.address = user.address;
         return token;
       }
-      // Untuk request berikutnya, pastikan token.id ada sebelum query.
-      if (!token.id) return token;
 
-      // Ambil data terbaru dari database untuk memastikan sesi selalu fresh.
-      const dbUser = await prisma.user.findUnique({
-        where: { id: Number(token.id) }, 
-      });
+      // Untuk request berikutnya, refresh data dari DB
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: Number(token.id) },
+          });
 
-      // Jika user ada di DB, perbarui token dengan data terbaru.
-      if (dbUser) {
-        token.name = dbUser.name;
-        token.role = dbUser.role;
-        token.phoneNumber = dbUser.phoneNumber;
-        token.address = dbUser.address;
+          // SOLUSI ERROR 1: Jangan return null. Cukup update jika user ditemukan.
+          if (dbUser) {
+            // Perbarui token dengan data terbaru
+            token.name = dbUser.name;
+            token.role = dbUser.role;
+            token.phoneNumber = dbUser.phoneNumber;
+            token.address = dbUser.address;
+          }
+        } catch (error) {
+          console.error("JWT Callback Error: Gagal mengambil data user dari DB.", error);
+        }
       }
       
       return token;
     },
 
-    /**
-     * Callback Session: Mengelola data sesi yang dikirim ke client.
-     */
     session({ session, token }) {
-      // Salin data dari token (yang sudah dijamin fresh) ke objek session.
-      if (session.user) {
-        // **PERBAIKAN KEDUA:** Konversi juga di sini untuk memastikan tipe data cocok.
-        session.user.id = Number(token.id); 
-        session.user.role = token.role;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.phoneNumber = token.phoneNumber;
-        session.user.address = token.address;
+      if (session.user && token.id) {
+        session.user.id = Number(token.id);
+        session.user.role = token.role as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.phoneNumber = token.phoneNumber as string | null;
+        session.user.address = token.address as string | null;
       }
       return session;
     },
