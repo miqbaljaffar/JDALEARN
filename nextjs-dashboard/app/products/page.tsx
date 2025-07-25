@@ -14,6 +14,7 @@ interface Product {
   price: number;
   category: { name: string; };
   imageUrl: string;
+  rating: number; // TAMBAHKAN RATING
 }
 
 interface Category {
@@ -25,6 +26,20 @@ type Filters = {
   categoryIds: number[];
   priceRange: [number, number];
 } | null;
+
+// Komponen untuk menampilkan bintang rating
+const StarRating = ({ rating }: { rating: number }) => {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    stars.push(
+      <span key={i} style={{ color: i <= rating ? '#ffc107' : '#e4e5e9' }}>
+        &#9733;
+      </span>
+    );
+  }
+  return <div>{stars}</div>;
+};
+
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -52,7 +67,9 @@ export default function ProductsPage() {
         throw new Error(errorData?.message || 'Gagal mengambil data dari server.');
       }
       const data = await res.json();
-      setProducts(data);
+      // Tambahkan data rating dummy
+      const productsWithRating = data.map((p: Product) => ({ ...p, rating: 4.5 }));
+      setProducts(productsWithRating);
     } catch (err: any) {
       setError(err.message);
       console.error("Gagal mengambil data produk:", err);
@@ -130,6 +147,10 @@ export default function ProductsPage() {
                   </Link>
                   <div className="product-info">
                     <h3>{product.name}</h3>
+                    {/* Tampilkan Rating Bintang */}
+                    <div style={{ marginBottom: '10px' }}>
+                        <StarRating rating={product.rating} />
+                    </div>
                     <p style={{ color: '#666', fontSize: '14px', marginBottom: '15px' }}>
                       Kategori: {product.category.name}
                     </p>
