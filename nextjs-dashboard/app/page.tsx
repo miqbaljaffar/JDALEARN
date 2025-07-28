@@ -49,33 +49,44 @@ export default async function Home() {
 
   return (
     <div className="space-y-20">
-      {/* Hero Section */}
-      <section className="text-center py-12">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">Selamat Datang di Toko Kami</h1>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
-          Temukan koleksi fashion terbaru dan terbaik di sini, dibuat dengan bahan berkualitas dan desain modern.
-        </p>
-        <Link href="/products" className="btn">
-          Jelajahi Semua Produk
-        </Link>
+      <section 
+        className="relative text-center py-24 md:py-32 rounded-lg overflow-hidden"
+        style={{
+          backgroundImage: 'url(/back.jpg)', 
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div 
+          className="absolute inset-0 bg-black opacity-50"
+          style={{ zIndex: 1 }}
+        ></div>
+
+        {/* Konten Hero Section */}
+        <div className="relative" style={{ zIndex: 2 }}>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Selamat Datang di Toko Kami</h1>
+          <p className="text-lg text-gray-200 max-w-3xl mx-auto mb-8">
+            Temukan koleksi fashion terbaru dan terbaik di sini, dibuat dengan bahan berkualitas dan desain modern.
+          </p>
+          <Link href="/products" className="btn bg-white text-gray-800 hover:bg-gray-200">
+            Jelajahi Semua Produk
+          </Link>
+        </div>
       </section>
 
-      {/* --- INI BAGIAN YANG DIPERBARUI --- */}
+
+      {/* Produk Unggulan */}
       <section>
         <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">Produk Unggulan</h2>
-        
-        {/* Gunakan komponen ProductCarousel yang baru di sini */}
         <div className="mx-auto max-w-6xl px-10">
            <ProductCarousel products={products} />
         </div>
-        
         <div className="text-center mt-12">
           <Link href="/products" className="btn border-2 border-blue-500 bg-transparent text-blue-500 hover:bg-blue-50">
             Lihat Koleksi Lengkap
           </Link>
         </div>
       </section>
-      {/* --- AKHIR BAGIAN YANG DIPERBARUI --- */}
 
       {/* Why Choose Us Section */}
       <section className="bg-white rounded-lg p-8 md:p-12">
