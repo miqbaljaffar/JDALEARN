@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { sanitizeObject } from '@/lib/sanitizer'; // Import sanitizer
+import { sanitizeObject } from '@/lib/sanitizer';
 
 // Skema Zod untuk validasi produk
 const productSchema = z.object({
@@ -18,6 +18,11 @@ const productSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    // Ambil parameter halaman dan batas dari URL, default ke halaman 1 & 9 item
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '9');
+    const skip = (page - 1) * limit;
+
     const categoryIds = searchParams.getAll('categoryId').map(id => parseInt(id)).filter(id => !isNaN(id));
     const minPrice = searchParams.has('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
     const maxPrice = searchParams.has('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
@@ -34,21 +39,31 @@ export async function GET(request: NextRequest) {
       if (minPrice !== undefined) {
         where.price.gte = minPrice;
       }
-      if (maxPrice !== undefined && maxPrice > 0) { // Pastikan maxPrice valid
+      if (maxPrice !== undefined && maxPrice > 0) { 
         where.price.lte = maxPrice;
       }
     }
 
+    // Hitung total produk yang cocok dengan filter untuk informasi pagination
+    const totalProducts = await prisma.product.count({ where });
+
     const products = await prisma.product.findMany({
-      where, // Terapkan kondisi filter
+      where, 
       include: {
         category: true,
       },
       orderBy: {
-        createdAt: 'desc', // Urutkan berdasarkan produk terbaru
-      }
+        createdAt: 'desc', 
+      },
+      skip: skip,
+      take: limit,
     });
-    return NextResponse.json(products);
+    return NextResponse.json({
+      products,
+      totalProducts,
+      totalPages: Math.ceil(totalProducts / limit),
+      currentPage: page,
+    });
   } catch (error) {
     console.error("Failed to fetch products:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

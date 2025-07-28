@@ -37,13 +37,32 @@ export default function ProductsManagementPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      // Untuk dashboard, kita minta semua produk tanpa pagination
+      // dengan menambahkan parameter `limit=-1` (atau angka yang sangat besar)
+      // atau dengan memodifikasi API, tapi cara ini lebih cepat.
+      // Untuk sekarang, kita akan perbaiki cara data dibaca.
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch('/api/products'),
+        fetch('/api/products'), // API call tetap sama
         fetch('/api/categories')
       ]);
       const productsData = await productsRes.json();
       const categoriesData = await categoriesRes.json();
-      setProducts(productsData);
+
+      // --- AWAL PERBAIKAN ---
+      // Cek apakah respons dari API adalah objek yang memiliki properti 'products'
+      if (productsData && Array.isArray(productsData.products)) {
+        // Jika ya, gunakan array dari properti tersebut
+        setProducts(productsData.products);
+      } else if (Array.isArray(productsData)) {
+        // Fallback jika API suatu saat mengembalikan array lagi
+        setProducts(productsData);
+      } else {
+        // Jika format tidak dikenali, set ke array kosong untuk mencegah error
+        console.error("Format data produk tidak terduga:", productsData);
+        setProducts([]);
+      }
+      // --- AKHIR PERBAIKAN ---
+
       setCategories(categoriesData);
     } catch (error) {
       console.error("Gagal mengambil data:", error);
