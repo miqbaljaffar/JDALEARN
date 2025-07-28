@@ -1,15 +1,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import prisma from '@/lib/prisma';
-import { unstable_cache } from 'next/cache'; // Import unstable_cache
+import { unstable_cache } from 'next/cache'; 
+// Impor komponen carousel yang baru
+import ProductCarousel from '@/app/ui/ProductCarousel';
 
-// Definisikan tipe data (tetap sama)
+// Definisikan tipe data
 interface Product {
   id: number;
   name: string;
-  description: string | null;
-  price: number;
-  category: { name: string; };
   imageUrl: string;
 }
 
@@ -21,14 +20,19 @@ interface News {
   slug: string;
 }
 
-// 1. BUNGKUS FUNGSI PENGAMBILAN DATA DENGAN unstable_cache
-// Ini akan menyimpan hasil query selama 1 jam (3600 detik)
+// Ubah fungsi pengambilan data untuk mengambil lebih banyak produk
 const getCachedFeaturedData = unstable_cache(
   async () => {
+    // Ambil lebih banyak produk (misalnya 9) untuk carousel
     const products = await prisma.product.findMany({
-      take: 4,
-      include: { category: true },
+      take: 9,
       orderBy: { createdAt: 'desc' },
+      // Hanya pilih field yang diperlukan untuk performa lebih baik
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true
+      }
     });
     const news = await prisma.news.findMany({
       take: 3,
@@ -36,17 +40,14 @@ const getCachedFeaturedData = unstable_cache(
     });
     return { products, news };
   },
-  ['featured_data'], // Kunci cache unik
-  { revalidate: 3600 } // Waktu revalidasi dalam detik
+  ['featured_data_carousel'], // Gunakan kunci cache baru
+  { revalidate: 3600 } // Revalidasi setiap 1 jam
 );
 
-
 export default async function Home() {
-  // Panggil fungsi yang sudah di-cache
   const { products, news } = await getCachedFeaturedData();
 
   return (
-    // 2. GUNAKAN TAILWIND CSS UNTUK SEMUA STYLING
     <div className="space-y-20">
       {/* Hero Section */}
       <section className="text-center py-12">
@@ -59,42 +60,22 @@ export default async function Home() {
         </Link>
       </section>
 
-      {/* Featured Products Section */}
+      {/* --- INI BAGIAN YANG DIPERBARUI --- */}
       <section>
         <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">Produk Unggulan</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product: Product) => (
-            <Link key={product.id} href={`/products/${product.id}`} className="group block">
-              <div className="product-card overflow-hidden">
-                <div className="relative h-64 w-full">
-                  <Image
-                    src={product.imageUrl}
-                    alt={`Gambar produk ${product.name}`}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 truncate">{product.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1 truncate">{product.description}</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-xl font-bold text-gray-900">Rp{product.price.toLocaleString('id-ID')}</span>
-                    <span className="bg-gray-200 text-gray-700 text-xs font-medium px-3 py-1 rounded-full">
-                      {product.category.name}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
+        
+        {/* Gunakan komponen ProductCarousel yang baru di sini */}
+        <div className="mx-auto max-w-6xl px-10">
+           <ProductCarousel products={products} />
         </div>
+        
         <div className="text-center mt-12">
           <Link href="/products" className="btn border-2 border-blue-500 bg-transparent text-blue-500 hover:bg-blue-50">
             Lihat Koleksi Lengkap
           </Link>
         </div>
       </section>
+      {/* --- AKHIR BAGIAN YANG DIPERBARUI --- */}
 
       {/* Why Choose Us Section */}
       <section className="bg-white rounded-lg p-8 md:p-12">

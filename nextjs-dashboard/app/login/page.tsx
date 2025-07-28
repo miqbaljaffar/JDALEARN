@@ -1,5 +1,8 @@
+'use client'; // Tambahkan ini jika belum ada
+
 import LoginForm from '@/app/ui/login-form';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react'; // Import signIn
 
 export default function LoginPage() {
   return (
@@ -15,6 +18,21 @@ export default function LoginPage() {
           </p>
         </div>
         <LoginForm />
+
+        {/* --- TAMBAHKAN KODE DI BAWAH INI --- */}
+        <div style={{ textAlign: 'center', marginTop: '20px', color: '#888' }}>
+          Atau
+        </div>
+
+        <button
+          onClick={() => signIn('google', { callbackUrl: '/' })}
+          className="btn w-full justify-center mt-4"
+          style={{ background: '#db4437', color: 'white' }}
+        >
+          Login dengan Google
+        </button>
+        {/* --- AKHIR DARI KODE TAMBAHAN --- */}
+
       </div>
     </div>
   );

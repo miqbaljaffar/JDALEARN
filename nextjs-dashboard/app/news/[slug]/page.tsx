@@ -1,18 +1,23 @@
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 
 // Fungsi untuk mengambil data berita tunggal dari database
-async function getNews(slug: string) {
-  const newsItem = await prisma.news.findUnique({
-    where: { slug },
-  });
+const getNews = unstable_cache(
+  async (slug: string) => {
+    const newsItem = await prisma.news.findUnique({
+      where: { slug },
+    });
 
-  if (!newsItem) {
-    notFound();
-  }
-  return newsItem;
-}
+    if (!newsItem) {
+      notFound();
+    }
+    return newsItem;
+  },
+  ['news_by_slug'], // Kunci cache
+  { revalidate: 3600 } // Revalidasi setiap 1 jam
+);
 
 export default async function NewsDetailPage({ params }: { params: { slug: string } }) {
   const newsItem = await getNews(params.slug);

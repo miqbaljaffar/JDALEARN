@@ -16,7 +16,7 @@ model User {
   name          String?
   email         String?   @unique
   emailVerified DateTime?
-  password      String
+  password      String?
   image         String?
   role          String    @default("CUSTOMER") 
   phoneNumber   String?
@@ -61,12 +61,15 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// MODEL BARU UNTUK VERIFIKASI OTP
 model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
 
-  @@unique([identifier, token])
+  @@unique([email, token])
 }
 
 // MODEL UNTUK KATEGORI PRODUK
@@ -168,3 +171,4 @@ model News {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+

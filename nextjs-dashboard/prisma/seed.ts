@@ -34,14 +34,18 @@ async function main() {
   const adminPassword = await hash('admin123', 10);
   await prisma.user.upsert({
     where: { email: 'admin@example.com' },
-    update: {},
+    update: { // <-- Tambahkan block update
+      role: 'ADMIN',
+      emailVerified: new Date(), // Juga update jika user sudah ada
+    },
     create: {
       email: 'admin@example.com',
       name: 'Admin User',
       password: adminPassword,
       role: 'ADMIN',
+      emailVerified: new Date(), // <-- TAMBAHKAN BARIS INI
     },
-  });
+});
   console.log(`Pengguna Admin (admin@example.com) berhasil dibuat.`);
 
   // Data untuk Customer

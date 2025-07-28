@@ -1,6 +1,7 @@
 'use client'
 
-import { poppins } from '@/app/ui/fonts'; 
+import { poppins } from '@/app/ui/fonts';
+import RevenueChart from '@/app/dashboard/ui/revenue-chart'; 
 
 function Card({ title, value, type }: { title: string; value: string | number; type: 'invoices' | 'customers' | 'pending' | 'collected' }) {
     return (
@@ -39,11 +40,10 @@ export default function DashboardPage() {
         {/* Placeholder untuk Chart Pendapatan */}
         <div className="card w-full col-span-1 md:col-span-4">
             <h2 className="text-xl font-semibold">Grafik Penjualan</h2>
-            <div className="h-80 bg-gray-100 rounded-md mt-4 flex items-center justify-center">
-                <p className="text-gray-500">Grafik akan ditampilkan di sini</p>
+            <div className="mt-4">
+                <RevenueChart />
             </div>
         </div>
-
         {/* Placeholder untuk Aktivitas Terbaru */}
         <div className="card w-full col-span-1 md:col-span-4">
             <h2 className="text-xl font-semibold">Aktivitas Terbaru</h2>

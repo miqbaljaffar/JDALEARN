@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import AddToCartButton from '@/app/ui/products/AddToCartButton';
 import BuyNowButton from '@/app/ui/products/BuyNowButton';
+import { unstable_cache } from 'next/cache';
 
 // Mendefinisikan tipe data untuk produk
 interface Product {
@@ -13,9 +14,9 @@ interface Product {
   price: number;
   category: { name: string; };
   imageUrl: string;
-  features: any; // Menggunakan 'any' agar lebih fleksibel saat casting
-  specifications: any; // Menggunakan 'any' agar lebih fleksibel saat casting
-  rating: number; // TAMBAHKAN RATING
+  features: any; 
+  specifications: any; 
+  rating: number; 
 }
 
 // Dummy data untuk ulasan
@@ -39,30 +40,41 @@ const StarRating = ({ rating, count }: { rating: number, count?: number }) => {
 };
 
 // Fungsi untuk mengambil data produk tunggal dari database
-async function getProduct(id: number): Promise<Product> {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      category: true,
-    },
-  });
+const getProduct = unstable_cache(
+  async (id: number): Promise<Product> => {
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: true,
+      },
+    });
 
-  // Jika produk tidak ditemukan, tampilkan halaman 404
-  if (!product) {
-    notFound();
-  }
-  
-  // *** INI PERBAIKANNYA ***
-  // Lakukan type casting ke 'any' sebelum menambahkan properti baru
-  const productWithRating: any = product;
-  productWithRating.rating = 4.5; // Tambahkan rating dummy
+    if (!product) {
+      notFound();
+    }
+    
+    const productWithRating: any = product;
+    productWithRating.rating = 4.5;
 
-  return productWithRating as Product;
-}
+    return productWithRating as Product;
+  },
+  ['product'],
+  { revalidate: 3600 }
+);
 
 
 export default async function ProductDetail({ params }: { params: { id: string } }) {
-  const productId = parseInt(params.id, 10);
+  // --- PERBAIKAN DI SINI ---
+  // Destructuring 'id' dari 'params' untuk mengatasi peringatan dari Next.js.
+  // Ini adalah pola yang direkomendasikan untuk kompatibilitas di masa depan.
+  const { id } = params;
+  const productId = parseInt(id, 10);
+
+  // Tambahan: Pemeriksaan jika ID yang diberikan bukan angka
+  if (isNaN(productId)) {
+    notFound();
+  }
+
   const product = await getProduct(productId);
 
   return (
@@ -94,7 +106,6 @@ export default async function ProductDetail({ params }: { params: { id: string }
           {/* Kolom Info Produk */}
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-3">{product.name}</h1>
-            {/* Tampilkan Rating Bintang di sini */}
             <div className="mb-4">
                 <StarRating rating={product.rating} count={dummyReviews.length}/>
             </div>
@@ -105,7 +116,6 @@ export default async function ProductDetail({ params }: { params: { id: string }
               Rp{product.price.toLocaleString('id-ID')}
             </div>
 
-            {/* --- PERBAIKAN TOMBOL --- */}
             <div className="flex items-center gap-4">
               <AddToCartButton productId={product.id} className="btn flex-1">
                 Tambah ke Keranjang
@@ -121,7 +131,6 @@ export default async function ProductDetail({ params }: { params: { id: string }
 
       {/* Grid untuk Fitur, Spesifikasi, dan Ulasan */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-        {/* Kolom Fitur */}
         <div className="card">
           <h2 className="text-2xl font-bold mb-4">Fitur Unggulan</h2>
           <ul className="list-disc list-inside space-y-2 text-gray-700">
@@ -131,7 +140,6 @@ export default async function ProductDetail({ params }: { params: { id: string }
           </ul>
         </div>
 
-        {/* Kolom Spesifikasi */}
         {product.specifications &&
           <div className="card">
             <h2 className="text-2xl font-bold mb-4">Spesifikasi Teknis</h2>
@@ -147,7 +155,6 @@ export default async function ProductDetail({ params }: { params: { id: string }
         }
       </div>
 
-       {/* Bagian Ulasan Pelanggan */}
       <div className="card mt-8">
         <h2 className="text-2xl font-bold mb-6">Ulasan Pelanggan</h2>
         <div className="space-y-6">

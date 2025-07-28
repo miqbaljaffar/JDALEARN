@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import prisma from '@/lib/prisma';
+import { unstable_cache } from 'next/cache';
 
 // Definisikan tipe data untuk kejelasan
 interface News {
@@ -12,14 +13,18 @@ interface News {
 }
 
 // Fungsi untuk mengambil semua berita dari database
-async function getAllNews() {
-  const news = await prisma.news.findMany({
-    orderBy: {
-      createdAt: 'desc', // Urutkan dari yang terbaru
-    },
-  });
-  return news;
-}
+const getAllNews = unstable_cache(
+  async () => {
+    const news = await prisma.news.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return news;
+  },
+  ['all_news'], // Kunci cache unik
+  { revalidate: 3600 } // Revalidasi setiap 1 jam
+);
 
 export default async function NewsListPage() {
   const allNews = await getAllNews();
