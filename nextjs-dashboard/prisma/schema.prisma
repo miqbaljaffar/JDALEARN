@@ -10,7 +10,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// MODEL UNTUK PENGGUNA (USER) - VERSI GABUNGAN
+// MODEL UNTUK PENGGUNA (USER) 
 model User {
   id            Int       @id @default(autoincrement())
   name          String?
@@ -129,21 +129,19 @@ model CartItem {
 
 // MODEL UNTUK PESANAN (ORDER)
 model Order {
-  id          Int      @id @default(autoincrement())
-  totalAmount Float
-  status      String   @default("PENDING")
+  id              Int      @id @default(autoincrement())
+  totalAmount     Float
+  status          String   @default("PENDING")
+  shippingAddress String
+  paymentMethod   String
+  paymentProof    String?  
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
 
-  // 👇 ADD THESE TWO LINES
-  shippingAddress String   // Menyimpan alamat pengiriman pesanan
-  paymentMethod   String   // Menyimpan metode pembayaran yang dipilih
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  items       OrderItem[]
+  items           OrderItem[]
 }
 
 // MODEL UNTUK ITEM DALAM PESANAN

@@ -94,19 +94,23 @@ export default function CheckoutPage() {
           paymentMethod: selectedPayment,
         }),
       });
+
+      const orderData = await res.json(); // Ambil data pesanan yang baru dibuat
+
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Gagal membuat pesanan.');
+        throw new Error(orderData.message || 'Gagal membuat pesanan.');
       }
-      alert('Pesanan berhasil dibuat! Terima kasih telah berbelanja.');
-      router.push('/profile'); // Arahkan ke halaman profil
+      
+      // Arahkan ke halaman pembayaran dengan ID pesanan
+      router.push(`/payment/${orderData.id}`);
+
     } catch (error: any) {
       alert(error.message);
     } finally {
       setIsProcessing(false);
     }
   };
-
+  
   // Hitung total harga
   const totalPrice = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);

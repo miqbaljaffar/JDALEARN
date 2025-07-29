@@ -54,9 +54,14 @@ export default function ProfileDropdown() {
                   Dashboard
                 </Link>
               ) : (
-                <Link href="/profile" onClick={() => setIsOpen(false)}>
-                  Account
-                </Link>
+                <>
+                  <Link href="/profile" onClick={() => setIsOpen(false)}>
+                    Akun
+                  </Link>
+                  <Link href="/profile/orders" onClick={() => setIsOpen(false)}>
+                    Riwayat Pesanan
+                  </Link>
+                </>
               )}
               <a onClick={() => {
                 signOut({ callbackUrl: '/' });
