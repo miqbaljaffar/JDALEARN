@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 
-// Tipe data untuk Order
 interface Order {
   id: number;
   totalAmount: number;
