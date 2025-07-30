@@ -1,6 +1,11 @@
-import Sidenav from '@/app/dashboard/ui/sidenav';
+import Sidenav from '@/app/(admin)/dashboard/ui/sidenav';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export const metadata = {
+  title: 'Dashboard | Ztyle',
+  description: 'Halaman manajemen untuk admin Ztyle.',
+};
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
       <div className="w-full flex-none md:w-64">

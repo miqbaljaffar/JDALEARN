@@ -26,16 +26,14 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
-    reset, // Gunakan reset untuk mengisi form
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
   });
 
-  // Efek untuk mengisi form saat data sesi tersedia atau berubah
   useEffect(() => {
     if (session?.user) {
-      // Isi form dengan data dari session
       reset({
         name: session.user.name ?? '',
         phoneNumber: session.user.phoneNumber ?? '',
@@ -58,7 +56,19 @@ export default function ProfilePage() {
         throw new Error(errorData.message || 'Gagal memperbarui profil.');
       }
 
-      await update(); // Panggil update untuk sinkronisasi sesi
+      // --- AWAL PERUBAHAN ---
+      // Panggil update() dengan data baru untuk memperbarui sesi
+      await update({
+        ...session, // sertakan data sesi yang lama
+        user: {
+            ...session?.user, // sertakan data user yang lama
+            name: data.name, // timpa dengan data baru
+            address: data.address,
+            phoneNumber: data.phoneNumber,
+        }
+      });
+      // --- AKHIR PERUBAHAN ---
+
       alert('Profil berhasil diperbarui!');
       setIsEditing(false);
 
@@ -67,11 +77,7 @@ export default function ProfilePage() {
     }
   };
   
-  // Sisa kode (UI) tetap sama, namun dengan beberapa penyesuaian:
-  // - Ganti `value={formData.xxx}` dengan `{...register('xxx')}`
-  // - Tampilkan `errors.xxx.message` di bawah setiap input
-  // - Gunakan `isSubmitting` untuk menonaktifkan tombol
-  
+  // Sisa kode UI tidak berubah
   if (status === "loading") {
     return <div className="card text-center">Memuat profil Anda...</div>;
   }
@@ -91,7 +97,6 @@ export default function ProfilePage() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
             <div className="flex flex-col items-center text-center md:col-span-1">
-              {/* Avatar, Nama, Email */}
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-4xl font-bold text-gray-600">
                 {session?.user?.name?.charAt(0).toUpperCase()}
               </div>
@@ -118,8 +123,6 @@ export default function ProfilePage() {
                 {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
               </div>
               
-              {/* ... (input email tetap disabled) ... */}
-
               <div>
                 <label htmlFor="phoneNumber" className="mb-1 block font-medium">Nomor Telepon</label>
                 <input
@@ -127,7 +130,7 @@ export default function ProfilePage() {
                   id="phoneNumber"
                   type="tel"
                   disabled={!isEditing || isSubmitting}
-                  placeholder="e.g., 08123456789"
+                  placeholder="e.g., 081234567890"
                   className="input-field"
                 />
                 {errors.phoneNumber && <p className="mt-1 text-sm text-red-500">{errors.phoneNumber.message}</p>}

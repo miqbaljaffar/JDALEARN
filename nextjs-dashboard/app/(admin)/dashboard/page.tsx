@@ -1,7 +1,7 @@
 'use client'
 
 import { poppins } from '@/app/ui/fonts';
-import RevenueChart from '@/app/dashboard/ui/revenue-chart'; 
+import RevenueChart from '@/app/(admin)/dashboard/ui/revenue-chart'; 
 import { useEffect, useState } from 'react';
 import { DashboardSkeleton } from '@/app/ui/skeletons'; 
 // Tipe data untuk statistik

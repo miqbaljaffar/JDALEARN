@@ -1,11 +1,11 @@
 import prisma from '@/lib/prisma';
 import ProductList from '@/app/ui/products/ProductList';
 import Pagination from '@/app/ui/pagination';
-import { Suspense } from 'react'; 
+import { Suspense } from 'react';
 import Search from '@/app/ui/search';
-import { TableSkeleton } from '@/app/ui/skeletons'; 
+import { TableSkeleton } from '@/app/ui/skeletons';
 
-// Tipe data untuk kejelasan
+// Definisikan tipe untuk kejelasan
 interface Product {
   id: number;
   name: string;
@@ -20,11 +20,18 @@ interface Category {
   name: string;
 }
 
+// Definisikan tipe untuk searchParams
+interface SearchParams {
+  [key: string]: string | string[] | undefined;
+}
+
 export const dynamic = 'force-dynamic';
 
-async function getProductsAndCategories(searchParams: {
-  [key: string]: string | string[] | undefined;
-}) {
+// --- AWAL PERUBAHAN ---
+async function getProductsAndCategories(searchParamsPromise: Promise<SearchParams>) {
+  // Await searchParams untuk mendapatkan objeknya
+  const searchParams = await searchParamsPromise;
+
   const query = searchParams?.query as string | undefined;
   const currentPage = parseInt((searchParams?.page as string) || '1');
   const limit = 9;
@@ -45,6 +52,8 @@ async function getProductsAndCategories(searchParams: {
   const maxPrice = searchParams?.maxPrice
     ? parseFloat(searchParams.maxPrice as string)
     : undefined;
+
+  // --- AKHIR PERUBAHAN (Logika di bawah ini tetap sama) ---
 
   const whereClause: any = {};
 
@@ -92,11 +101,8 @@ async function getProductsAndCategories(searchParams: {
 }
 
 // Komponen Halaman Utama (Server Component)
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) { // Perbarui tipe di sini
+  // Langsung teruskan Promise ke fungsi
   const { products, totalPages, categories, currentPage } =
     await getProductsAndCategories(searchParams);
 
@@ -110,7 +116,6 @@ export default async function ProductsPage({
         </div>
       </div>
 
-      {/* Gunakan Suspense untuk menampilkan skeleton saat data dimuat */}
       <Suspense fallback={<TableSkeleton />}>
         <ProductList initialProducts={products} categories={categories} />
       </Suspense>

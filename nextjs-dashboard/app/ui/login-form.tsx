@@ -7,52 +7,72 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react'; // Impor useState
 
-// 1. Definisikan skema validasi dengan Zod
+// Skema validasi dengan Zod
 const LoginSchema = z.object({
   email: z.string().email({ message: 'Alamat email tidak valid.' }),
   password: z.string().min(6, { message: 'Password minimal harus 6 karakter.' }),
 });
 
-// 2. Tentukan tipe data dari skema
+// Tipe data dari skema
 type LoginFormValues = z.infer<typeof LoginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
-  
-  // 3. Inisialisasi React Hook Form
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting } 
+  const [loginError, setLoginError] = useState<string | null>(null); // State untuk error
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
-    resolver: zodResolver(LoginSchema), // Integrasikan Zod
+    resolver: zodResolver(LoginSchema),
   });
 
-  // 4. Buat fungsi onSubmit yang akan dipanggil oleh handleSubmit
+  // Fungsi onSubmit yang akan dipanggil oleh handleSubmit
   const onSubmit = async (data: LoginFormValues) => {
+    setLoginError(null); // Reset error setiap kali login
     try {
+      // 1. Lakukan proses login tanpa redirect otomatis
       const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
         password: data.password,
       });
 
+      // 2. Jika login gagal, tampilkan pesan error
       if (result?.error) {
-        // Error dari NextAuth (misal: kredensial salah)
-        // Dapatkan error spesifik dan set di form
-        // Untuk saat ini, kita akan tampilkan error umum di bawah form
+        // Tangani berbagai jenis error dari NextAuth
+        if (result.error === 'CredentialsSignin') {
+          setLoginError('Email atau password yang Anda masukkan salah.');
+        } else {
+          setLoginError(result.error);
+        }
+        return; // Hentikan proses
+      }
+      
+      // 3. Jika login berhasil, ambil data profil untuk cek role
+      const res = await fetch('/api/user/profile');
+      const user = await res.json();
+
+      // 4. Arahkan berdasarkan role
+      if (user && user.role === 'ADMIN') {
+        router.push('/dashboard');
       } else {
         router.push('/');
-        router.refresh();
       }
+
+      // Refresh halaman untuk memastikan semua state (seperti header) terupdate
+      router.refresh();
+
     } catch (e) {
-      // Tangani error tak terduga
+      console.error(e);
+      setLoginError('Terjadi kesalahan yang tidak terduga.');
     }
   };
 
   return (
-    // 5. Gunakan `handleSubmit` dari React Hook Form
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="w-full">
         <div>
@@ -63,18 +83,16 @@ export default function LoginForm() {
             Email
           </label>
           <div className="relative">
-            {/* 6. Gunakan `register` untuk menghubungkan input */}
             <input
               {...register('email')}
               className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               id="email"
               type="email"
               placeholder="Masukkan alamat email Anda"
-              disabled={isSubmitting} 
+              disabled={isSubmitting}
             />
             <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
-          {/* 7. Tampilkan pesan error spesifik */}
           {errors.email && (
             <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
           )}
@@ -93,7 +111,7 @@ export default function LoginForm() {
               id="password"
               type="password"
               placeholder="Masukkan password"
-              disabled={isSubmitting} 
+              disabled={isSubmitting}
             />
             <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
@@ -102,6 +120,13 @@ export default function LoginForm() {
           )}
         </div>
       </div>
+      
+      {/* Tampilkan pesan error di sini */}
+      {loginError && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-red-500">{loginError}</p>
+        </div>
+      )}
       
       <button type="submit" className="btn w-full justify-center" disabled={isSubmitting} aria-disabled={isSubmitting}>
         {isSubmitting ? 'Memproses...' : 'Log in'} <ArrowRightIcon className="ml-auto h-5 w-5" />

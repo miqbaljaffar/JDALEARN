@@ -1,5 +1,4 @@
 import NextAuth, { AuthOptions, Profile } from 'next-auth';
-import { AdapterUser } from 'next-auth/adapters';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import prisma from '@/lib/prisma';
@@ -18,127 +17,89 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          return null;
-        }
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
-
-        // Pastikan user ada DAN passwordnya ada (untuk user non-google)
-        if (!user || !user.password) {
-          return null;
-        }
-
-        // Cek apakah user sudah verifikasi email (jika login pakai password)
-        if (!user.emailVerified) {
-          // Melempar error agar bisa ditangkap di front-end
-          throw new Error("Email belum diverifikasi. Silakan cek email Anda.");
-        }
+        if (!credentials?.email || !credentials.password) return null;
+        
+        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+        if (!user || !user.password) return null;
+        if (!user.emailVerified) throw new Error("Email belum diverifikasi. Silakan cek email Anda.");
 
         const isPasswordValid = await compare(credentials.password, user.password);
-        if (!isPasswordValid) {
-          return null;
-        }
-        
-        // Mengembalikan data user yang akan dimasukkan ke token saat login pertama kali
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phoneNumber: user.phoneNumber,
-          address: user.address,
-          image: user.image
-        };
+        if (!isPasswordValid) return null;
+
+        return user;
       }
     })
   ],
   session: {
     strategy: 'jwt' as const,
-    maxAge: 24 * 60 * 60, 
+    maxAge: 24 * 60 * 60,
   },
   callbacks: {
-    // Callback 'signIn' untuk menangani login, terutama dari Google
-    async signIn({ user, account, profile }: { user: AdapterUser | any, account: any, profile?: Profile | any }) {
-      // Jika login menggunakan Google
-      if (account?.provider === 'google') {
-        if (profile?.email) {
-          // Cek apakah user sudah ada
-          const existingUser = await prisma.user.findUnique({
-             where: { email: profile.email },
-          });
-
-          // Jika user belum ada, buat user baru
-          if (!existingUser) {
-              await prisma.user.create({
-                  data: {
-                      email: profile.email,
-                      name: profile.name,
-                      image: profile.picture,
-                      role: 'CUSTOMER',
-                      emailVerified: new Date(), // Langsung verifikasi untuk login Google
-                  },
-              });
-          }
-        }
-      }
-      return true; // Lanjutkan proses login
-    },
-
-    // Callback 'jwt' dipanggil setiap kali token dibuat atau diperbarui
-    async jwt({ token, user }) {
-      // 1. Saat login pertama kali (baik via credentials maupun Google), object `user` tersedia.
-      // Kita masukkan datanya ke dalam token.
-      if (user) {
-        token.id = Number(user.id);
-        token.role = user.role;
-        token.name = user.name;
-        token.email = user.email;
-        token.phoneNumber = user.phoneNumber;
-        token.address = user.address;
-        token.picture = user.image;
-      }
-      
-      // 2. Pada request berikutnya (misalnya saat memanggil `update()` atau `useSession`), 
-      // object `user` tidak tersedia. Kita perlu mengambil data terbaru dari database.
-      else if (token.id) {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google' && profile?.email) {
         const dbUser = await prisma.user.findUnique({
-          where: { id: Number(token.id) },
+           where: { email: profile.email },
         });
 
+        if (!dbUser) {
+            await prisma.user.create({
+                data: {
+                    email: profile.email,
+                    name: profile.name,
+                    image: (profile as any).picture,
+                    role: 'CUSTOMER',
+                    emailVerified: new Date(),
+                },
+            });
+        }
+      }
+      return true;
+    },
+
+    // --- AWAL PERUBAHAN ---
+    async jwt({ token, user, trigger, session }) {
+      // Pemicu 'update' akan dijalankan oleh fungsi `update` dari useSession
+      if (trigger === "update" && session) {
+        token.name = session.user.name;
+        token.address = session.user.address;
+        token.phoneNumber = session.user.phoneNumber;
+      }
+      
+      // Saat login pertama kali
+      if (user?.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+        
         if (dbUser) {
-          // Perbarui token dengan data terbaru dari database
           token.id = dbUser.id;
           token.role = dbUser.role;
           token.name = dbUser.name;
           token.email = dbUser.email;
-          token.phoneNumber = dbUser.phoneNumber;
-          token.address = dbUser.address;
           token.picture = dbUser.image;
+          token.address = dbUser.address; // Tambahkan address
+          token.phoneNumber = dbUser.phoneNumber; // Tambahkan phoneNumber
         }
       }
-      
       return token;
     },
+    // --- AKHIR PERUBAHAN ---
 
     session({ session, token }) {
-      if (session.user && token.id) {
+      if (session.user) {
         session.user.id = Number(token.id);
         session.user.role = token.role as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
-        session.user.phoneNumber = token.phoneNumber as string | null;
-        session.user.address = token.address as string | null;
         session.user.image = token.picture as string | null;
+        session.user.address = token.address as string | null;
+        session.user.phoneNumber = token.phoneNumber as string | null;
       }
       return session;
     },
   },
   pages: {
     signIn: '/login',
-    // Anda bisa menambahkan halaman error di sini
-    // error: '/auth/error', 
   },
 };
 

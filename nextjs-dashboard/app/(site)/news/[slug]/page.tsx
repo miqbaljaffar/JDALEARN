@@ -4,17 +4,22 @@ import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { Metadata, ResolvingMetadata } from 'next';
 
-// Props untuk generateMetadata
+// --- AWAL PERUBAHAN ---
+// Perbarui tipe Props untuk mencerminkan params sebagai Promise
 type Props = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
   searchParams: { [key: string]: string | string[] | undefined }
 }
+// --- AKHIR PERUBAHAN ---
 
 export async function generateMetadata(
-  { params: { slug } }: Props,
+  { params }: Props, // params sekarang adalah Promise
   parent: ResolvingMetadata
 ): Promise<Metadata> {
+  // --- AWAL PERUBAHAN ---
+  const { slug } = await params; // Await params untuk mendapatkan slug
   const newsItem = await getNews(slug);
+  // --- AKHIR PERUBAHAN ---
 
   if (!newsItem) {
     return {
@@ -41,10 +46,12 @@ export async function generateMetadata(
         },
       ],
     },
+    // Tambahkan metadataBase untuk mengatasi warning
+    metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
   }
 }
 
-// Fungsi untuk mengambil data berita tunggal dari database
+// Fungsi getNews tetap sama
 const getNews = unstable_cache(
   async (slug: string) => {
     const newsItem = await prisma.news.findUnique({
@@ -60,8 +67,12 @@ const getNews = unstable_cache(
   { revalidate: 3600 }
 );
 
-export default async function NewsDetailPage({ params: { slug } }: { params: { slug: string } }) {
+// --- AWAL PERUBAHAN ---
+export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params; // Await params untuk mendapatkan slug
   const newsItem = await getNews(slug);
+  // --- AKHIR PERUBAHAN ---
+
   const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   const newsArticleSchema = {
