@@ -2,6 +2,13 @@
 
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import Image from 'next/image';
+// Impor hook dan komponen dari TipTap
+import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import { Toolbar } from '@/app/(admin)/dashboard/ui/Toolbar';
+import { toast } from 'sonner';
 
 // Interface untuk data Berita
 interface News {
@@ -30,6 +37,34 @@ export default function NewsManagementPage() {
     slug: '',
   });
 
+    // Inisialisasi editor TipTap
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Placeholder.configure({
+        placeholder: 'Tulis konten lengkap berita di sini...',
+      }),
+    ],
+    content: formData.content,
+    onUpdate: ({ editor }) => {
+      setFormData(prev => ({ ...prev, content: editor.getHTML() }));
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl focus:outline-none w-full input-field min-h-[200px] p-2',
+      },
+    },
+    immediatelyRender: false, // <-- TAMBAHKAN BARIS INI
+  });
+
+  useEffect(() => {
+    // Pastikan editor ada dan kontennya berbeda sebelum di-set
+    if (editor && editor.getHTML() !== formData.content) {
+      editor.commands.setContent(formData.content);
+    }
+  }, [formData.content, editor]);
+
   // Fungsi untuk mengambil data berita
   const fetchNews = async () => {
     setIsLoading(true);
@@ -44,6 +79,7 @@ export default function NewsManagementPage() {
       }
     } catch (error) {
       console.error("Gagal mengambil data berita:", error);
+      toast.error("Gagal memuat data berita.");
     } finally {
       setIsLoading(false);
     }
@@ -63,8 +99,9 @@ export default function NewsManagementPage() {
   // Handler untuk men-submit form
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.excerpt || !formData.content || !formData.author) {
-      alert("Judul, excerpt, konten, dan penulis wajib diisi.");
+    // Validasi konten dari editor
+    if (!formData.title || !formData.excerpt || !editor?.getText() || !formData.author) {
+      toast.error("Judul, excerpt, konten, dan penulis wajib diisi.");
       return;
     }
     setUploading(true);
@@ -87,7 +124,7 @@ export default function NewsManagementPage() {
         }
       } catch (error) {
         console.error(error);
-        alert('Terjadi kesalahan saat mengunggah gambar.');
+        toast.error('Terjadi kesalahan saat mengunggah gambar.');
         setUploading(false);
         return;
       }
@@ -96,7 +133,7 @@ export default function NewsManagementPage() {
     // Buat slug dari judul
     const slug = formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
-    const newsData = { ...formData, imageUrl, slug };
+    const newsData = { ...formData, imageUrl, slug, content: editor.getHTML() };
 
     const url = isEditing ? `/api/news/${isEditing}` : '/api/news';
     const method = isEditing ? 'PUT' : 'POST';
@@ -112,11 +149,12 @@ export default function NewsManagementPage() {
         throw new Error('Gagal menyimpan data berita.');
       }
       
+      toast.success(isEditing ? "Berita berhasil diperbarui!" : "Berita berhasil ditambahkan!");
       resetForm();
       fetchNews();
     } catch (error) {
       console.error("Gagal menyimpan berita:", error);
-      alert('Gagal menyimpan berita.');
+      toast.error('Gagal menyimpan berita.');
     } finally {
       setUploading(false);
     }
@@ -124,24 +162,35 @@ export default function NewsManagementPage() {
   
   // Handler untuk menghapus berita
   const handleDelete = async (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
-      try {
-        await fetch(`/api/news/${id}`, { method: 'DELETE' });
-        fetchNews();
-      } catch (error) {
-        console.error("Gagal menghapus berita:", error);
-        alert('Gagal menghapus berita.');
-      }
-    }
+    toast('Apakah Anda yakin ingin menghapus berita ini?', {
+        action: {
+            label: 'Hapus',
+            onClick: async () => {
+                try {
+                    await fetch(`/api/news/${id}`, { method: 'DELETE' });
+                    toast.success("Berita berhasil dihapus.");
+                    fetchNews();
+                } catch (error) {
+                    console.error("Gagal menghapus berita:", error);
+                    toast.error('Gagal menghapus berita.');
+                }
+            }
+        },
+        cancel: {
+            label: 'Batal',
+            onClick: () => {} // <-- INI PERBAIKANNYA
+        }
+    })
   };
 
   // Handler untuk mode edit
   const handleEdit = (item: News) => {
     setIsEditing(item.id);
+    const content = item.content || '';
     setFormData({
       title: item.title,
       excerpt: item.excerpt,
-      content: item.content || '',
+      content: content,
       author: item.author,
       imageUrl: item.imageUrl,
       slug: item.slug
@@ -156,6 +205,7 @@ export default function NewsManagementPage() {
     setIsEditing(null);
     setSelectedFile(null);
     setFormData({ title: '', excerpt: '', content: '', author: '', imageUrl: '/news/default.jpg', slug: '' });
+    editor?.commands.clearContent();
   };
 
   if (isLoading) {
@@ -182,7 +232,13 @@ export default function NewsManagementPage() {
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Judul Berita" required className="input-field" />
             <input value={formData.excerpt} onChange={(e) => setFormData({...formData, excerpt: e.target.value})} placeholder="Insight Singkat (Excerpt)" required className="input-field" />
-            <textarea value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} placeholder="Konten Lengkap Berita" required className="input-field" rows={6} />
+            
+            {/* Toolbar dan Editor Content dari TipTap */}
+            <div className="border border-gray-200 rounded-lg">
+              <Toolbar editor={editor} />
+              <EditorContent editor={editor} />
+            </div>
+
             <input value={formData.author} onChange={(e) => setFormData({...formData, author: e.target.value})} placeholder="Nama Penulis" required className="input-field" />
             
             <div>

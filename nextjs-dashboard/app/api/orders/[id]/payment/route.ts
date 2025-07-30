@@ -3,19 +3,25 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
-interface Params {
-  params: { id: string };
+// Definisikan tipe untuk params
+interface RouteParams {
+  id: string;
 }
 
 // POST handler untuk menyimpan URL bukti pembayaran
-export async function POST(request: Request, { params }: Params) {
+export async function POST(request: Request, { params }: { params: Promise<RouteParams> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const id = parseInt(params.id);
+    // --- AWAL PERUBAHAN ---
+    // Gunakan await untuk mendapatkan nilai 'id' dari params
+    const { id: orderId } = await params;
+    const id = parseInt(orderId);
+    // --- AKHIR PERUBAHAN ---
+
     const { paymentProof } = await request.json();
 
     if (!paymentProof) {

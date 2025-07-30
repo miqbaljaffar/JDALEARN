@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { sanitizeObject } from '@/lib/sanitizer'; // Import sanitizer
+import { sanitizeObject } from '@/lib/sanitizer';
 
-interface Params {
-  params: { id: string };
+// Definisikan tipe untuk params
+interface RouteParams {
+  id: string;
 }
 
-// Mengambil satu produk berdasarkan ID (Tidak ada perubahan)
-export async function GET(request: Request, { params }: Params) {
+// Mengambil satu produk berdasarkan ID
+export async function GET(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: productId } = await params;
+    const id = parseInt(productId);
     const product = await prisma.product.findUnique({
       where: { id },
       include: { category: true },
@@ -26,11 +28,11 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 // Mengupdate produk berdasarkan ID
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: productId } = await params;
+    const id = parseInt(productId);
     const data = await request.json();
-    // Sanitasi data sebelum diupdate
     const sanitizedData = sanitizeObject(data);
 
     const updatedProduct = await prisma.product.update({
@@ -38,7 +40,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       data: {
         name: sanitizedData.name,
         price: sanitizedData.price,
-        stock: sanitizedData.stock, // <-- TAMBAHKAN BARIS INI
+        stock: sanitizedData.stock,
         imageUrl: sanitizedData.imageUrl,
         description: sanitizedData.description,
         features: sanitizedData.features,
@@ -53,10 +55,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-// Menghapus produk berdasarkan ID (Tidak ada perubahan)
-export async function DELETE(request: Request, { params }: Params) {
+// Menghapus produk berdasarkan ID
+export async function DELETE(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: productId } = await params;
+    const id = parseInt(productId);
     await prisma.product.delete({
       where: { id },
     });

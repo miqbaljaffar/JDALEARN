@@ -26,6 +26,31 @@ const getMonthlySalesData = (orders: any[]) => {
   }));
 };
 
+// Fungsi BARU untuk mengelompokkan pelanggan baru per bulan
+const getNewCustomersData = (users: any[]) => {
+  const customersByMonth: { [key: string]: number } = {};
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+
+  // Hanya proses user yang dibuat pada tahun ini
+  const currentYear = new Date().getFullYear();
+  const usersThisYear = users.filter(user => new Date(user.createdAt).getFullYear() === currentYear);
+
+  usersThisYear.forEach(user => {
+    const month = new Date(user.createdAt).getMonth();
+    const monthName = monthNames[month];
+    if (customersByMonth[monthName]) {
+      customersByMonth[monthName]++;
+    } else {
+      customersByMonth[monthName] = 1;
+    }
+  });
+
+  return monthNames.map(month => ({
+    name: month,
+    customers: customersByMonth[month] || 0,
+  }));
+};
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== 'ADMIN') {
@@ -33,39 +58,56 @@ export async function GET() {
   }
 
   try {
-    // 1. Ambil semua order yang sudah lunas (PAID)
-    const paidOrders = await prisma.order.findMany({
-      where: { status: 'PAID' },
-      include: {
-        items: true,
-      }
-    });
+    // Ambil data dari database
+    const [paidOrders, allCustomers, totalProducts, totalCustomerCount] = await Promise.all([
+        prisma.order.findMany({
+            where: { status: 'PAID' },
+            include: { items: { include: { product: { select: { id: true, name: true } } } } }
+        }),
+        prisma.user.findMany({
+            where: { role: 'CUSTOMER' },
+            orderBy: { createdAt: 'asc' }
+        }),
+        prisma.product.count(),
+        prisma.user.count({ where: { role: 'CUSTOMER' } })
+    ]);
 
-    // 2. Hitung total pendapatan
+    // Kalkulasi statistik dasar
     const totalRevenue = paidOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    // 3. Hitung total produk terjual
     const totalSales = paidOrders.reduce((sum, order) => {
       return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
     }, 0);
 
-    // 4. Hitung jumlah pelanggan (semua user dengan role CUSTOMER)
-    const totalCustomers = await prisma.user.count({
-      where: { role: 'CUSTOMER' },
-    });
-
-    // 5. Hitung total produk yang ada
-    const totalProducts = await prisma.product.count();
-
-    // 6. Siapkan data untuk grafik penjualan
+    // Siapkan data untuk grafik penjualan bulanan
     const salesChartData = getMonthlySalesData(paidOrders);
 
+    // Hitung produk terlaris
+    const productSales: { [key: string]: { name: string; sales: number } } = {};
+    paidOrders.forEach(order => {
+        order.items.forEach(item => {
+            if(productSales[item.product.id]) {
+                productSales[item.product.id].sales += item.quantity;
+            } else {
+                productSales[item.product.id] = { name: item.product.name, sales: item.quantity };
+            }
+        });
+    });
+    const bestSellingProducts = Object.values(productSales)
+                                    .sort((a, b) => b.sales - a.sales)
+                                    .slice(0, 5); // Ambil 5 teratas
+
+    // Siapkan data untuk grafik pelanggan baru
+    const newCustomersChartData = getNewCustomersData(allCustomers);
+
+    // Kembalikan semua data dalam satu respons
     return NextResponse.json({
       totalRevenue,
       totalSales,
-      totalCustomers,
+      totalCustomers: totalCustomerCount,
       totalProducts,
       salesChartData,
+      bestSellingProducts,
+      newCustomersChartData,
     });
 
   } catch (error) {

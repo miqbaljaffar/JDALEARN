@@ -1,19 +1,24 @@
 'use client'
 
 import { poppins } from '@/app/ui/fonts';
-import RevenueChart from '@/app/(admin)/dashboard/ui/revenue-chart'; 
 import { useEffect, useState } from 'react';
 import { DashboardSkeleton } from '@/app/ui/skeletons'; 
-// Tipe data untuk statistik
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
+
+// Tipe data untuk statistik, disesuaikan dengan API terbaru
 interface Stats {
   totalRevenue: number;
   totalSales: number;
   totalCustomers: number;
   totalProducts: number;
   salesChartData: { name: string; sales: number }[];
+  bestSellingProducts: { name: string; sales: number }[];
+  newCustomersChartData: { name: string; customers: number }[];
 }
 
-function Card({ title, value, type }: { title: string; value: string | number; type: 'invoices' | 'customers' | 'pending' | 'collected' }) {
+// Komponen Card untuk menampilkan data tunggal
+function Card({ title, value }: { title: string; value: string | number; }) {
     return (
         <div className="rounded-xl bg-gray-50 p-2 shadow-sm">
             <div className="flex p-4">
@@ -26,10 +31,42 @@ function Card({ title, value, type }: { title: string; value: string | number; t
     );
 }
 
+// Komponen Chart yang generik untuk Bar dan Line
+function AnalyticsChart({ data, type, dataKey, name, color }: { data: any[], type: 'line' | 'bar', dataKey: string, name: string, color: string }) {
+    if (type === 'line') {
+        return (
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey={dataKey} name={name} stroke={color} />
+              </LineChart>
+            </ResponsiveContainer>
+        );
+    }
+    
+    return (
+        <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey={dataKey} name={name} fill={color} />
+            </BarChart>
+        </ResponsiveContainer>
+    )
+}
+
+// Komponen utama halaman Dashboard
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // State untuk pesan error
+  const [error, setError] = useState<string | null>(null); 
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -44,6 +81,7 @@ export default function DashboardPage() {
       } catch (err: any) {
         console.error("Kesalahan pada fetchStats:", err);
         setError(err.message);
+        toast.error("Gagal memuat data statistik.");
       } finally {
         setIsLoading(false);
       }
@@ -51,7 +89,6 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  // Tampilkan skeleton saat isLoading true
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -76,30 +113,54 @@ export default function DashboardPage() {
         Dashboard
       </h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="Total Pendapatan" value={`Rp${stats.totalRevenue.toLocaleString('id-ID')}`} type="collected" />
-        <Card title="Total Penjualan (Unit)" value={stats.totalSales} type="pending" />
-        <Card title="Jumlah Pelanggan" value={stats.totalCustomers} type="invoices" />
-        <Card title="Jumlah Produk" value={stats.totalProducts} type="customers" />
+        <Card title="Total Pendapatan" value={`Rp${stats.totalRevenue.toLocaleString('id-ID')}`} />
+        <Card title="Total Penjualan (Unit)" value={stats.totalSales.toLocaleString('id-ID')} />
+        <Card title="Jumlah Pelanggan" value={stats.totalCustomers.toLocaleString('id-ID')} />
+        <Card title="Jumlah Produk" value={stats.totalProducts.toLocaleString('id-ID')} />
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
+      
+      {/* Layout baru untuk menampilkan chart */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         
-        <div className="card w-full col-span-1 md:col-span-4">
-            <h2 className="text-xl font-semibold">Grafik Penjualan (Unit Terjual)</h2>
+        <div className="card w-full">
+            <h2 className="text-xl font-semibold">5 Produk Terlaris (Unit)</h2>
             <div className="mt-4">
-                <RevenueChart data={stats.salesChartData} />
+                <AnalyticsChart 
+                    data={stats.bestSellingProducts} 
+                    type="bar"
+                    dataKey="sales"
+                    name="Unit Terjual"
+                    color="#8884d8"
+                />
             </div>
         </div>
         
-        <div className="card w-full col-span-1 md:col-span-4">
-            <h2 className="text-xl font-semibold">Aktivitas Terbaru</h2>
-            {/* Aktivitas terbaru bisa dibuat dinamis di lain waktu */}
-            <ul className="mt-4 space-y-3">
-                <li className="p-3 bg-gray-50 rounded-md">Pesanan baru #1005 telah dibuat.</li>
-                <li className="p-3 bg-gray-50 rounded-md">Produk "Celana Jeans" stok diperbarui.</li>
-                <li className="p-3 bg-gray-50 rounded-md">Pelanggan baru mendaftar: Amelia.</li>
-                <li className="p-3 bg-gray-50 rounded-md">Pesanan #1002 statusnya diubah menjadi "Dikirim".</li>
-            </ul>
+        <div className="card w-full">
+            <h2 className="text-xl font-semibold">Grafik Pelanggan Baru (Tahun Ini)</h2>
+             <div className="mt-4">
+                <AnalyticsChart 
+                    data={stats.newCustomersChartData} 
+                    type="line"
+                    dataKey="customers"
+                    name="Pelanggan Baru"
+                    color="#82ca9d"
+                />
+            </div>
         </div>
+
+        <div className="card w-full lg:col-span-2">
+            <h2 className="text-xl font-semibold">Grafik Penjualan (Unit per Bulan)</h2>
+             <div className="mt-4">
+                <AnalyticsChart 
+                    data={stats.salesChartData} 
+                    type="line"
+                    dataKey="sales"
+                    name="Unit Terjual"
+                    color="#ffc658"
+                />
+            </div>
+        </div>
+
       </div>
     </main>
   );

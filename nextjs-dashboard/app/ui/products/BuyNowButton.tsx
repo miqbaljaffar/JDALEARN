@@ -2,20 +2,27 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner"; 
 
 interface BuyNowButtonProps {
   productId: number;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
-  disabled?: boolean;
+  disabled?: boolean; // Pastikan props disabled diterima
 }
 
-export default function BuyNowButton({ productId, className, style, children }: BuyNowButtonProps) {
+export default function BuyNowButton({ productId, className, style, children, disabled }: BuyNowButtonProps) {
   const { status } = useSession();
   const router = useRouter();
 
   const handleBuyNow = async () => {
+    // Tambahkan pengecekan ini di awal fungsi
+    if (disabled) {
+      toast.error('Stok produk ini sudah habis.');
+      return;
+    }
+
     if (status === 'unauthenticated') {
       router.push('/login');
       return;
@@ -30,20 +37,24 @@ export default function BuyNowButton({ productId, className, style, children }: 
       });
 
       if (!res.ok) {
-        throw new Error('Gagal menambahkan produk');
+        // Ambil pesan error dari API
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Gagal menambahkan produk');
       }
 
       // 2. Jika berhasil, langsung arahkan ke halaman checkout
       router.push('/checkout');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Gagal memproses, silakan coba lagi.');
+      // Tampilkan error menggunakan toast
+      toast.error(error.message || 'Gagal memproses, silakan coba lagi.');
     }
   };
 
   return (
-    <button onClick={handleBuyNow} className={className} style={style}>
+    // Pastikan untuk meneruskan props 'disabled' ke elemen button
+    <button onClick={handleBuyNow} className={className} style={style} disabled={disabled}>
       {children}
     </button>
   );
