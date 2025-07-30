@@ -41,6 +41,7 @@ export const authOptions: AuthOptions = {
           return null;
         }
         
+        // Mengembalikan data user yang akan dimasukkan ke token saat login pertama kali
         return {
           id: user.id,
           name: user.name,
@@ -48,15 +49,15 @@ export const authOptions: AuthOptions = {
           role: user.role,
           phoneNumber: user.phoneNumber,
           address: user.address,
+          image: user.image
         };
       }
     })
   ],
   session: {
     strategy: 'jwt' as const,
-    maxAge: 24 * 60 * 60, // 1 hari
+    maxAge: 24 * 60 * 60, 
   },
-  // --- KESALAHAN ADA DI SINI, SEHARUSNYA HANYA ADA SATU KEY 'callbacks' ---
   callbacks: {
     // Callback 'signIn' untuk menangani login, terutama dari Google
     async signIn({ user, account, profile }: { user: AdapterUser | any, account: any, profile?: Profile | any }) {
@@ -85,21 +86,42 @@ export const authOptions: AuthOptions = {
       return true; // Lanjutkan proses login
     },
 
-    // Callback 'jwt' untuk menambahkan data ke token
+    // Callback 'jwt' dipanggil setiap kali token dibuat atau diperbarui
     async jwt({ token, user }) {
-      // Saat login awal, `user` object tersedia
+      // 1. Saat login pertama kali (baik via credentials maupun Google), object `user` tersedia.
+      // Kita masukkan datanya ke dalam token.
       if (user) {
-        token.id = Number(user.id); 
+        token.id = Number(user.id);
         token.role = user.role;
         token.name = user.name;
         token.email = user.email;
         token.phoneNumber = user.phoneNumber;
         token.address = user.address;
+        token.picture = user.image;
       }
+      
+      // 2. Pada request berikutnya (misalnya saat memanggil `update()` atau `useSession`), 
+      // object `user` tidak tersedia. Kita perlu mengambil data terbaru dari database.
+      else if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: Number(token.id) },
+        });
+
+        if (dbUser) {
+          // Perbarui token dengan data terbaru dari database
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.phoneNumber = dbUser.phoneNumber;
+          token.address = dbUser.address;
+          token.picture = dbUser.image;
+        }
+      }
+      
       return token;
     },
 
-    // Callback 'session' untuk menambahkan data dari token ke sesi
     session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = Number(token.id);
@@ -108,6 +130,7 @@ export const authOptions: AuthOptions = {
         session.user.email = token.email as string;
         session.user.phoneNumber = token.phoneNumber as string | null;
         session.user.address = token.address as string | null;
+        session.user.image = token.picture as string | null;
       }
       return session;
     },

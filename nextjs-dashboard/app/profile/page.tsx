@@ -93,9 +93,6 @@ export default function ProfilePage() {
       <div className="card">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Profil Akun</h1>
-          <button onClick={() => signOut({ callbackUrl: '/' })} className="btn bg-red-600 hover:bg-red-700">
-            Logout
-          </button>
         </div>
       </div>
 

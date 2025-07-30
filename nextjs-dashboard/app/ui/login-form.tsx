@@ -61,7 +61,7 @@ export default function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading} // 4. Nonaktifkan input saat loading
+              disabled={isLoading} 
             />
             <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
@@ -84,7 +84,7 @@ export default function LoginForm() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading} // 5. Nonaktifkan input saat loading
+              disabled={isLoading} 
             />
             <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
@@ -97,7 +97,6 @@ export default function LoginForm() {
         </div>
       )}
       
-      {/* 6. Ubah teks dan status tombol berdasarkan isLoading */}
       <button type="submit" className="btn w-full justify-center" disabled={isLoading} aria-disabled={isLoading}>
         {isLoading ? 'Memproses...' : 'Log in'} <ArrowRightIcon className="ml-auto h-5 w-5" />
       </button>
