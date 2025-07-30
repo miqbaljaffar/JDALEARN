@@ -20,9 +20,10 @@ export async function GET() {
         items: {
           include: {
             product: {
-              select: { name: true, imageUrl: true }
+              select: { name: true, imageUrl: true, id: true } // Tambahkan id produk
             }
-          }
+          },
+          // Sertakan semua field dari OrderItem, termasuk id dan reviewId
         },
       },
       orderBy: {

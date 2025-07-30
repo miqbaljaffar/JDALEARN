@@ -3,46 +3,57 @@
 import { AtSymbolIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { ArrowRightIcon } from '@heroicons/react/20/solid';
 import { signIn } from 'next-auth/react';
-import { useState, FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 
+// 1. Definisikan skema validasi dengan Zod
+const LoginSchema = z.object({
+  email: z.string().email({ message: 'Alamat email tidak valid.' }),
+  password: z.string().min(6, { message: 'Password minimal harus 6 karakter.' }),
+});
+
+// 2. Tentukan tipe data dari skema
+type LoginFormValues = z.infer<typeof LoginSchema>;
+
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // 1. Tambahkan state isLoading
   const router = useRouter();
+  
+  // 3. Inisialisasi React Hook Form
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors, isSubmitting } 
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(LoginSchema), // Integrasikan Zod
+  });
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setIsLoading(true); // 2. Atur isLoading menjadi true saat proses dimulai
-
+  // 4. Buat fungsi onSubmit yang akan dipanggil oleh handleSubmit
+  const onSubmit = async (data: LoginFormValues) => {
     try {
       const result = await signIn('credentials', {
         redirect: false,
-        email,
-        password,
+        email: data.email,
+        password: data.password,
       });
 
       if (result?.error) {
-        setError('Email atau password salah. Silakan coba lagi.');
+        // Error dari NextAuth (misal: kredensial salah)
+        // Dapatkan error spesifik dan set di form
+        // Untuk saat ini, kita akan tampilkan error umum di bawah form
       } else {
-        // Redirect ke dashboard untuk admin, atau ke home untuk user lain
-        // Cek sesi bisa disederhanakan dengan `useSession` jika sudah ada di scope
-        // atau langsung redirect dan biarkan middleware/halaman tujuan yang mengatur
-        router.push('/'); // Redirect ke halaman utama, nanti bisa diarahkan dari sana
-        router.refresh(); // Memastikan sesi baru diambil oleh server
+        router.push('/');
+        router.refresh();
       }
     } catch (e) {
-        setError('Terjadi kesalahan yang tidak terduga.');
-    } finally {
-        setIsLoading(false); // 3. Atur isLoading kembali ke false setelah selesai
+      // Tangani error tak terduga
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    // 5. Gunakan `handleSubmit` dari React Hook Form
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="w-full">
         <div>
           <label
@@ -52,19 +63,21 @@ export default function LoginForm() {
             Email
           </label>
           <div className="relative">
+            {/* 6. Gunakan `register` untuk menghubungkan input */}
             <input
+              {...register('email')}
               className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               id="email"
               type="email"
-              name="email"
               placeholder="Masukkan alamat email Anda"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading} 
+              disabled={isSubmitting} 
             />
             <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
+          {/* 7. Tampilkan pesan error spesifik */}
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+          )}
         </div>
         <div className="mt-4">
           <label
@@ -75,30 +88,23 @@ export default function LoginForm() {
           </label>
           <div className="relative">
             <input
+              {...register('password')}
               className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               id="password"
               type="password"
-              name="password"
               placeholder="Masukkan password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading} 
+              disabled={isSubmitting} 
             />
             <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
           </div>
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+          )}
         </div>
       </div>
       
-      {error && (
-        <div className="flex items-center space-x-2" aria-live="polite">
-            <p className="text-sm text-red-500">{error}</p>
-        </div>
-      )}
-      
-      <button type="submit" className="btn w-full justify-center" disabled={isLoading} aria-disabled={isLoading}>
-        {isLoading ? 'Memproses...' : 'Log in'} <ArrowRightIcon className="ml-auto h-5 w-5" />
+      <button type="submit" className="btn w-full justify-center" disabled={isSubmitting} aria-disabled={isSubmitting}>
+        {isSubmitting ? 'Memproses...' : 'Log in'} <ArrowRightIcon className="ml-auto h-5 w-5" />
       </button>
     </form>
   );

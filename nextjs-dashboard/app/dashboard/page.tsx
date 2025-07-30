@@ -2,6 +2,16 @@
 
 import { poppins } from '@/app/ui/fonts';
 import RevenueChart from '@/app/dashboard/ui/revenue-chart'; 
+import { useEffect, useState } from 'react';
+
+// Tipe data untuk statistik
+interface Stats {
+  totalRevenue: number;
+  totalSales: number;
+  totalCustomers: number;
+  totalProducts: number;
+  salesChartData: { name: string; sales: number }[];
+}
 
 function Card({ title, value, type }: { title: string; value: string | number; type: 'invoices' | 'customers' | 'pending' | 'collected' }) {
     return (
@@ -17,11 +27,55 @@ function Card({ title, value, type }: { title: string; value: string | number; t
 }
 
 export default function DashboardPage() {
-    // Untuk saat ini, kita akan gunakan data dummy untuk kartu insight.
-    const totalRevenue = 125000000;
-    const totalSales = 550;
-    const totalCustomers = 120;
-    const totalProducts = 85;
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // State untuk pesan error
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/dashboard/stats');
+
+        // --- AWAL PERBAIKAN ---
+        // Cek apakah respons dari server berhasil (status code 200-299)
+        if (!res.ok) {
+          // Jika tidak, jangan coba parsing sebagai JSON.
+          // Buat pesan error yang informatif dan lempar sebagai error.
+          const errorText = await res.text(); // Ambil isi respons (bisa jadi HTML atau teks biasa)
+          throw new Error(`Gagal mengambil data: Status ${res.status}. Respons: ${errorText.substring(0, 100)}...`);
+        }
+        // --- AKHIR PERBAIKAN ---
+
+        const data = await res.json();
+        setStats(data);
+      } catch (err: any) {
+        console.error("Kesalahan pada fetchStats:", err);
+        setError(err.message); // Simpan pesan error untuk ditampilkan di UI
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (isLoading) {
+    return <div className="card text-center">Memuat data dashboard...</div>;
+  }
+
+  // Tampilkan pesan error jika ada
+  if (error) {
+    return (
+        <div className="card text-center bg-red-50 border-red-500">
+            <h2 className="text-xl font-bold text-red-700">Terjadi Kesalahan</h2>
+            <p className="text-red-600 mt-2">Tidak dapat memuat data statistik.</p>
+            <p className="text-xs text-gray-500 mt-4">Pastikan Anda login sebagai Admin.</p>
+        </div>
+    );
+  }
+
+  if (!stats) {
+    return <div className="card text-center">Data statistik tidak ditemukan.</div>;
+  }
 
   return (
     <main>
@@ -29,24 +83,23 @@ export default function DashboardPage() {
         Dashboard
       </h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Sekarang ini akan bekerja karena komponen Card sudah didefinisikan di atas */}
-        <Card title="Total Pendapatan" value={`Rp${totalRevenue.toLocaleString('id-ID')}`} type="collected" />
-        <Card title="Total Penjualan" value={totalSales} type="pending" />
-        <Card title="Jumlah Pelanggan" value={totalCustomers} type="invoices" />
-        <Card title="Jumlah Produk" value={totalProducts} type="customers" />
+        <Card title="Total Pendapatan" value={`Rp${stats.totalRevenue.toLocaleString('id-ID')}`} type="collected" />
+        <Card title="Total Penjualan (Unit)" value={stats.totalSales} type="pending" />
+        <Card title="Jumlah Pelanggan" value={stats.totalCustomers} type="invoices" />
+        <Card title="Jumlah Produk" value={stats.totalProducts} type="customers" />
       </div>
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
         
-        {/* Placeholder untuk Chart Pendapatan */}
         <div className="card w-full col-span-1 md:col-span-4">
-            <h2 className="text-xl font-semibold">Grafik Penjualan</h2>
+            <h2 className="text-xl font-semibold">Grafik Penjualan (Unit Terjual)</h2>
             <div className="mt-4">
-                <RevenueChart />
+                <RevenueChart data={stats.salesChartData} />
             </div>
         </div>
-        {/* Placeholder untuk Aktivitas Terbaru */}
+        
         <div className="card w-full col-span-1 md:col-span-4">
             <h2 className="text-xl font-semibold">Aktivitas Terbaru</h2>
+            {/* Aktivitas terbaru bisa dibuat dinamis di lain waktu */}
             <ul className="mt-4 space-y-3">
                 <li className="p-3 bg-gray-50 rounded-md">Pesanan baru #1005 telah dibuat.</li>
                 <li className="p-3 bg-gray-50 rounded-md">Produk "Celana Jeans" stok diperbarui.</li>

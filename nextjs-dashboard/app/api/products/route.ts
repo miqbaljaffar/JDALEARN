@@ -18,17 +18,23 @@ const productSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    // Ambil parameter halaman dan batas dari URL, default ke halaman 1 & 9 item
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '9');
     const skip = (page - 1) * limit;
 
+    const query = searchParams.get('query') || undefined; // Ambil query pencarian
     const categoryIds = searchParams.getAll('categoryId').map(id => parseInt(id)).filter(id => !isNaN(id));
     const minPrice = searchParams.has('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
     const maxPrice = searchParams.has('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
 
-    // Buat objek `where` untuk query Prisma
     const where: any = {};
+
+    if (query) {
+      where.name = {
+        contains: query,
+        mode: 'insensitive',
+      };
+    }
 
     if (categoryIds.length > 0) {
       where.categoryId = { in: categoryIds };
@@ -39,7 +45,7 @@ export async function GET(request: NextRequest) {
       if (minPrice !== undefined) {
         where.price.gte = minPrice;
       }
-      if (maxPrice !== undefined && maxPrice > 0) { 
+      if (maxPrice !== undefined && maxPrice > 0) {
         where.price.lte = maxPrice;
       }
     }
@@ -48,12 +54,12 @@ export async function GET(request: NextRequest) {
     const totalProducts = await prisma.product.count({ where });
 
     const products = await prisma.product.findMany({
-      where, 
+      where,
       include: {
         category: true,
       },
       orderBy: {
-        createdAt: 'desc', 
+        createdAt: 'desc',
       },
       skip: skip,
       take: limit,

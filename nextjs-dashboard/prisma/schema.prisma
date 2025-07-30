@@ -31,6 +31,7 @@ model User {
   // Relasi untuk E-commerce
   orders        Order[]
   cart          Cart?
+  reviews       Review[]
 }
 
 // MODEL UNTUK NEXTAUTH
@@ -98,6 +99,7 @@ model Product {
 
   orderItems    OrderItem[]
   cartItems     CartItem[]
+  reviews       Review[]
 }
 
 // MODEL UNTUK KERANJANG BELANJA (CART)
@@ -155,6 +157,25 @@ model OrderItem {
 
   productId Int
   product   Product @relation(fields: [productId], references: [id])
+
+  reviewId  Int?     @unique
+  review    Review?  @relation(fields: [reviewId], references: [id])
+}
+
+// MODEL BARU UNTUK REVIEW
+model Review {
+  id          Int      @id @default(autoincrement())
+  rating      Int
+  comment     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderItem   OrderItem?
 }
 
 // MODEL UNTUK BERITA/ARTIKEL FASHION

@@ -66,7 +66,7 @@ export default function ProductList({ initialProducts, categories }: ProductList
         throw new Error('Gagal memuat produk yang difilter.');
       }
       const data = await res.json();
-      setProducts(data);
+      setProducts(data.products); 
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -84,7 +84,7 @@ export default function ProductList({ initialProducts, categories }: ProductList
         )}
       </aside>
 
-      {/* Kolom Daftar Produk - <main> diganti dengan <div> untuk memperbaiki error */}
+      {/* Kolom Daftar Produk */}
       <div>
         {isLoading ? (
           <div className="flex h-96 items-center justify-center text-gray-500">Memuat produk...</div>

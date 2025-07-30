@@ -2,6 +2,48 @@ import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
+import { Metadata, ResolvingMetadata } from 'next';
+
+// Props untuk generateMetadata
+type Props = {
+  params: { slug: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const slug = params.slug;
+  const newsItem = await getNews(slug);
+
+  if (!newsItem) {
+    return {
+      title: 'Berita Tidak Ditemukan',
+      description: 'Halaman berita yang Anda cari tidak dapat ditemukan.',
+    }
+  }
+
+  const title = `${newsItem.title} | Ztyle News`;
+  const description = newsItem.excerpt;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title: title,
+      description: description,
+      images: [
+        {
+          url: newsItem.imageUrl,
+          width: 1200,
+          height: 630,
+          alt: `Gambar untuk ${newsItem.title}`,
+        },
+      ],
+    },
+  }
+}
 
 // Fungsi untuk mengambil data berita tunggal dari database
 const getNews = unstable_cache(
@@ -15,15 +57,79 @@ const getNews = unstable_cache(
     }
     return newsItem;
   },
-  ['news_by_slug'], // Kunci cache
-  { revalidate: 3600 } // Revalidasi setiap 1 jam
+  ['news_by_slug'],
+  { revalidate: 3600 }
 );
 
 export default async function NewsDetailPage({ params }: { params: { slug: string } }) {
   const newsItem = await getNews(params.slug);
+  const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
+  // --- AWAL PERBAIKAN: DATA TERSTRUKTUR ---
+  const newsArticleSchema = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": newsItem.title,
+    "image": [
+      `${siteUrl}${newsItem.imageUrl}`
+     ],
+    "datePublished": newsItem.createdAt.toISOString(),
+    "dateModified": newsItem.updatedAt.toISOString(),
+    "author": [{
+        "@type": "Person",
+        "name": newsItem.author,
+        "url": `${siteUrl}/about` // Asumsi halaman tentang kami
+    }],
+    "publisher": {
+      "@type": "Organization",
+      "name": "Ztyle",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/Logo.png`
+      }
+    },
+    "description": newsItem.excerpt
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": `${siteUrl}`
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "News",
+        "item": `${siteUrl}/news`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": newsItem.title,
+        "item": `${siteUrl}/news/${newsItem.slug}`
+      }
+    ]
+  };
+  // --- AKHIR PERBAIKAN ---
 
   return (
     <div className="card max-w-4xl mx-auto">
+      {/* --- AWAL PERBAIKAN: SCRIPT JSON-LD --- */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      {/* --- AKHIR PERBAIKAN --- */}
+      
       {/* Judul Berita */}
       <h1 className="text-4xl font-bold mb-4">{newsItem.title}</h1>
       

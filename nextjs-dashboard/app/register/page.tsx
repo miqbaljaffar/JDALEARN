@@ -1,44 +1,59 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+// Skema validasi yang sama dengan di API route untuk konsistensi
+const RegisterSchema = z.object({
+  name: z.string().min(3, "Nama harus lebih dari 3 karakter."),
+  email: z.string().email("Format email tidak valid."),
+  password: z.string().min(6, "Password minimal harus 6 karakter."),
+});
+
+// Mengekstrak tipe data dari skema Zod
+type RegisterFormValues = z.infer<typeof RegisterSchema>;
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // State untuk menangani error yang mungkin dikirim dari server/API
+  const [apiError, setApiError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Fungsi untuk menangani registrasi via email dan password
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  // Inisialisasi React Hook Form dengan Zod sebagai resolver
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(RegisterSchema),
+  });
 
+  // Fungsi yang dijalankan saat form valid dan di-submit
+  const onSubmit = async (data: RegisterFormValues) => {
+    setApiError(null); // Reset error setiap kali submit
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(data),
       });
 
-      const data = await res.json();
+      const responseData = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || 'Gagal melakukan registrasi.');
+        // Jika API mengembalikan error, tampilkan pesannya
+        throw new Error(responseData.message || 'Gagal melakukan registrasi.');
       }
 
-      // Alihkan ke halaman verifikasi email setelah registrasi manual berhasil
-      // Anda bisa memberikan email sebagai query param jika halaman verifikasi memerlukannya
+      // Jika sukses, arahkan ke halaman verifikasi email
       router.push('/verify-email');
       
     } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      // Tangkap dan tampilkan error
+      setApiError(err.message);
     }
   };
 
@@ -47,52 +62,49 @@ export default function RegisterPage() {
       <h1>Buat Akun Baru</h1>
       <p>Sudah punya akun? <Link href="/login" style={{ color: '#0070f3' }}>Masuk di sini</Link></p>
 
-      {/* Form Registrasi Manual */}
-      <form onSubmit={handleSubmit} style={{ marginTop: '30px' }}>
-        {error && <p style={{ color: 'red', marginBottom: '20px', textAlign: 'center' }}>{error}</p>}
+      {/* Form registrasi manual */}
+      <form onSubmit={handleSubmit(onSubmit)} style={{ marginTop: '30px' }}>
+        {apiError && <p style={{ color: 'red', marginBottom: '20px', textAlign: 'center' }}>{apiError}</p>}
         
         <div style={{ marginBottom: '20px' }}>
           <label htmlFor="name" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Nama Lengkap</label>
           <input
+            {...register('name')}
             id="name"
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            disabled={isLoading}
+            disabled={isSubmitting}
             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
+          {/* Menampilkan pesan error spesifik dari Zod */}
+          {errors.name && <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{errors.name.message}</p>}
         </div>
 
         <div style={{ marginBottom: '20px' }}>
           <label htmlFor="email" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Email</label>
           <input
+            {...register('email')}
             id="email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isLoading}
+            disabled={isSubmitting}
             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
+          {errors.email && <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{errors.email.message}</p>}
         </div>
 
         <div style={{ marginBottom: '20px' }}>
           <label htmlFor="password" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Password</label>
           <input
+            {...register('password')}
             id="password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={6}
-            required
-            disabled={isLoading}
+            disabled={isSubmitting}
             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
+          {errors.password && <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{errors.password.message}</p>}
         </div>
 
-        <button type="submit" className="btn" disabled={isLoading} style={{ width: '100%' }}>
-          {isLoading ? 'Mendaftarkan...' : 'Daftar'}
+        <button type="submit" className="btn" disabled={isSubmitting} style={{ width: '100%' }}>
+          {isSubmitting ? 'Mendaftarkan...' : 'Daftar'}
         </button>
       </form>
       
@@ -109,7 +121,7 @@ export default function RegisterPage() {
         className="btn"
         style={{ 
           width: '100%', 
-          background: '#4285F4', // Warna Google yang lebih modern
+          background: '#4285F4',
           color: 'white',
           display: 'flex',
           alignItems: 'center',

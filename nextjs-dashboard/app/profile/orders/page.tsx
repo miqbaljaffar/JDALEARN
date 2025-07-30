@@ -4,10 +4,17 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Tipe data untuk pesanan
 interface OrderItem {
-  product: { name: string; imageUrl: string; };
+  id: number;
+  reviewId: number | null;
+  product: {
+    id: number;
+    name: string;
+    imageUrl: string;
+  };
   quantity: number;
   price: number;
 }
@@ -101,7 +108,23 @@ export default function OrderHistoryPage() {
               <div className="border-t pt-4">
                 {order.items.map((item, index) => (
                   <div key={index} className="flex justify-between items-center py-2">
-                    <span>{item.product.name} (x{item.quantity})</span>
+                    <div className="flex items-center gap-4">
+                      <Image src={item.product.imageUrl} alt={item.product.name} width={50} height={50} className="rounded-md object-cover" />
+                      <div>
+                        <span>{item.product.name} (x{item.quantity})</span>
+                        <div className="text-sm mt-2">
+                          {/* Logika Tombol Ulasan */}
+                          {(order.status === 'DELIVERED' || order.status === 'PAID') && item.reviewId === null && (
+                            <Link href={`/products/${item.product.id}?order_item_id=${item.id}#reviews`} className="text-blue-600 hover:underline">
+                              Beri Ulasan
+                            </Link>
+                          )}
+                           {item.reviewId !== null && (
+                            <span className="text-gray-500">Ulasan telah diberikan</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                     <span>Rp{(item.price * item.quantity).toLocaleString('id-ID')}</span>
                   </div>
                 ))}
