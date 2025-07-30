@@ -323,3 +323,13 @@ body {
   background-color: #f4f4f4;
   color: #007bff;
 }
+
+/* Tambahkan kode ini di paling bawah */
+.social-icon-item {
+  color: #333;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.social-icon-item:hover {
+  color: #007bff;
+  transform: scale(1.1);
+}

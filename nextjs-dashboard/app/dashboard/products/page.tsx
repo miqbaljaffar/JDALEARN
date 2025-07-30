@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Pagination from '@/app/ui/pagination';
+import { TableSkeleton } from '@/app/ui/skeletons';
 
+// Interface untuk data Product dan Category
 interface Product {
   id: number;
   name: string;
@@ -18,7 +22,12 @@ interface Category {
   name: string;
 }
 
-export default function ProductsManagementPage() {
+// Komponen utama dipisahkan untuk menggunakan Suspense
+function ProductsManagementComponent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // State untuk data dan UI
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +35,11 @@ export default function ProductsManagementPage() {
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  
+  // State untuk paginasi
+  const [totalPages, setTotalPages] = useState(0);
+  const currentPage = Number(searchParams.get('page')) || 1;
+
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -34,46 +48,50 @@ export default function ProductsManagementPage() {
     description: '',
   });
 
-  const fetchData = async () => {
+  // useEffect sekarang bergantung pada searchParams (perubahan URL)
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch(`/api/products?page=${currentPage}`), // Menggunakan currentPage dari URL
+          fetch('/api/categories')
+        ]);
+        const productsData = await productsRes.json();
+        const categoriesData = await categoriesRes.json();
+
+        setProducts(productsData.products);
+        setTotalPages(productsData.totalPages);
+
+        if (categoriesData && Array.isArray(categoriesData.categories)) {
+          setCategories(categoriesData.categories);
+        } else if (Array.isArray(categoriesData)) {
+          setCategories(categoriesData);
+        }
+
+      } catch (error) {
+        console.error("Gagal mengambil data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [currentPage]); 
+
+  const refetchCurrentPage = async () => {
     setIsLoading(true);
     try {
-      // Untuk dashboard, kita minta semua produk tanpa pagination
-      // dengan menambahkan parameter `limit=-1` (atau angka yang sangat besar)
-      // atau dengan memodifikasi API, tapi cara ini lebih cepat.
-      // Untuk sekarang, kita akan perbaiki cara data dibaca.
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch('/api/products'), // API call tetap sama
-        fetch('/api/categories')
-      ]);
+      const productsRes = await fetch(`/api/products?page=${currentPage}`);
       const productsData = await productsRes.json();
-      const categoriesData = await categoriesRes.json();
-
-      // --- AWAL PERBAIKAN ---
-      // Cek apakah respons dari API adalah objek yang memiliki properti 'products'
-      if (productsData && Array.isArray(productsData.products)) {
-        // Jika ya, gunakan array dari properti tersebut
-        setProducts(productsData.products);
-      } else if (Array.isArray(productsData)) {
-        // Fallback jika API suatu saat mengembalikan array lagi
-        setProducts(productsData);
-      } else {
-        // Jika format tidak dikenali, set ke array kosong untuk mencegah error
-        console.error("Format data produk tidak terduga:", productsData);
-        setProducts([]);
-      }
-      // --- AKHIR PERBAIKAN ---
-
-      setCategories(categoriesData);
+      setProducts(productsData.products);
+      setTotalPages(productsData.totalPages);
     } catch (error) {
-      console.error("Gagal mengambil data:", error);
+        console.error("Gagal memuat ulang data:", error);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
-  
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -134,7 +152,7 @@ export default function ProductsManagementPage() {
       }
       
       resetForm();
-      fetchData(); 
+      await refetchCurrentPage();
     } catch (error) {
       console.error("Gagal menyimpan produk:", error);
       alert('Gagal menyimpan produk.');
@@ -147,7 +165,7 @@ export default function ProductsManagementPage() {
     if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
       try {
         await fetch(`/api/products/${id}`, { method: 'DELETE' });
-        fetchData();
+        await refetchCurrentPage();
       } catch (error) {
         console.error("Gagal menghapus produk:", error);
       }
@@ -174,8 +192,8 @@ export default function ProductsManagementPage() {
     setFormData({ name: '', price: '', categoryId: '', imageUrl: '/products/default.jpg', description: '' });
   };
 
-  if (isLoading) {
-    return <p>Memuat data produk...</p>;
+  if (isLoading && products.length === 0) {
+    return <TableSkeleton />;
   }
 
   return (
@@ -196,7 +214,6 @@ export default function ProductsManagementPage() {
         <div className="card">
           <h2>{isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}</h2>
           <form onSubmit={handleSubmit}>
-            {/* Form inputs remain the same */}
             <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Nama Produk" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Harga" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <select
@@ -221,7 +238,6 @@ export default function ProductsManagementPage() {
                 </div>
               }
             </div>
-
             <button type="submit" className="btn" disabled={uploading}>
               {uploading ? 'Menyimpan...' : (isEditing ? 'Update' : 'Simpan')}
             </button>
@@ -232,28 +248,27 @@ export default function ProductsManagementPage() {
 
       <div className="card">
         <h3>Daftar Produk</h3>
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', position: 'relative' }}>
+          {isLoading && <div style={{position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', display: 'grid', placeItems: 'center'}}>Memuat...</div>}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
             <thead>
-              {/* Table headers remain the same */}
               <tr style={{ borderBottom: '1px solid #ddd' }}>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Gambar</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Nama</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Harga</th>
-                 <th style={{ padding: '12px', textAlign: 'left' }}>Kategori</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>Kategori</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {products.map((product) => (
                 <tr key={product.id} style={{ borderBottom: '1px solid #eee' }}>
-                  {/* Table body remains the same */}
                   <td style={{ padding: '12px' }}>
                     <Image src={product.imageUrl} alt={product.name} width={50} height={50} style={{ borderRadius: '8px', objectFit: 'cover' }}/>
                   </td>
                   <td style={{ padding: '12px' }}>{product.name}</td>
                   <td style={{ padding: '12px' }}>Rp{product.price.toLocaleString('id-ID')}</td>
-                  <td style={{ padding: '12px' }}>{product.category.name}</td>
+                  <td style={{ padding: '12px' }}>{product.category?.name || 'N/A'}</td>
                   <td style={{ padding: '12px' }}>
                     <button onClick={() => handleEdit(product)} className="btn" style={{ marginRight: '8px', padding: '6px 12px', fontSize: '12px' }}>Edit</button>
                     <button onClick={() => handleDelete(product.id)} className="btn" style={{ background: '#e53e3e', borderColor: '#e53e3e', padding: '6px 12px', fontSize: '12px' }}>Hapus</button>
@@ -263,7 +278,23 @@ export default function ProductsManagementPage() {
             </tbody>
           </table>
         </div>
+        
+        <div className="mt-8">
+            <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+            />
+        </div>
       </div>
     </div>
   );
+}
+
+// Gunakan Suspense untuk menangani pembacaan searchParams di server
+export default function ProductsManagementPage() {
+    return (
+        <Suspense fallback={<TableSkeleton />}>
+            <ProductsManagementComponent />
+        </Suspense>
+    )
 }

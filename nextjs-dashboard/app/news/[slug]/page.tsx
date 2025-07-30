@@ -11,10 +11,9 @@ type Props = {
 }
 
 export async function generateMetadata(
-  { params, searchParams }: Props,
+  { params: { slug } }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const slug = params.slug;
   const newsItem = await getNews(slug);
 
   if (!newsItem) {
@@ -61,11 +60,10 @@ const getNews = unstable_cache(
   { revalidate: 3600 }
 );
 
-export default async function NewsDetailPage({ params }: { params: { slug: string } }) {
-  const newsItem = await getNews(params.slug);
+export default async function NewsDetailPage({ params: { slug } }: { params: { slug: string } }) {
+  const newsItem = await getNews(slug);
   const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-  // --- AWAL PERBAIKAN: DATA TERSTRUKTUR ---
   const newsArticleSchema = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -73,12 +71,12 @@ export default async function NewsDetailPage({ params }: { params: { slug: strin
     "image": [
       `${siteUrl}${newsItem.imageUrl}`
      ],
-    "datePublished": newsItem.createdAt.toISOString(),
-    "dateModified": newsItem.updatedAt.toISOString(),
+    "datePublished": new Date(newsItem.createdAt).toISOString(),
+    "dateModified": new Date(newsItem.updatedAt).toISOString(),
     "author": [{
         "@type": "Person",
         "name": newsItem.author,
-        "url": `${siteUrl}/about` // Asumsi halaman tentang kami
+        "url": `${siteUrl}/about`
     }],
     "publisher": {
       "@type": "Organization",
@@ -111,15 +109,13 @@ export default async function NewsDetailPage({ params }: { params: { slug: strin
         "@type": "ListItem",
         "position": 3,
         "name": newsItem.title,
-        "item": `${siteUrl}/news/${newsItem.slug}`
+        "item": `${siteUrl}/news/${slug}`
       }
     ]
   };
-  // --- AKHIR PERBAIKAN ---
 
   return (
     <div className="card max-w-4xl mx-auto">
-      {/* --- AWAL PERBAIKAN: SCRIPT JSON-LD --- */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleSchema) }}
@@ -128,19 +124,15 @@ export default async function NewsDetailPage({ params }: { params: { slug: strin
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      {/* --- AKHIR PERBAIKAN --- */}
       
-      {/* Judul Berita */}
       <h1 className="text-4xl font-bold mb-4">{newsItem.title}</h1>
       
-      {/* Informasi Penulis dan Tanggal */}
       <div className="flex items-center text-gray-500 mb-6">
         <span>Oleh: {newsItem.author}</span>
         <span className="mx-2">•</span>
         <span>{new Date(newsItem.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
       </div>
 
-      {/* Gambar Utama Berita */}
       <div className="relative h-96 w-full rounded-lg overflow-hidden mb-8 shadow-lg">
         <Image
           src={newsItem.imageUrl}
@@ -150,7 +142,6 @@ export default async function NewsDetailPage({ params }: { params: { slug: strin
         />
       </div>
 
-      {/* Konten Detail Berita */}
       <div className="prose lg:prose-xl max-w-none">
         <p>{newsItem.content}</p>
       </div>

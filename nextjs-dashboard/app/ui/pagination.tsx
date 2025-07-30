@@ -1,8 +1,7 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import clsx from 'clsx';
 
 interface PaginationProps {
   currentPage: number;
@@ -18,11 +17,11 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
     if (page >= 1 && page <= totalPages) {
       const params = new URLSearchParams(searchParams);
       params.set('page', page.toString());
-      router.push(`${pathname}?${params.toString()}`);
+      // Untuk dashboard, kita cukup refresh dengan query param baru
+      router.replace(`${pathname}?${params.toString()}`);
     }
   };
 
-  // Jangan tampilkan apa-apa jika hanya ada 1 halaman atau kurang
   if (totalPages <= 1) {
     return null;
   }

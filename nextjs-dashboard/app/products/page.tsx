@@ -1,8 +1,9 @@
 import prisma from '@/lib/prisma';
 import ProductList from '@/app/ui/products/ProductList';
 import Pagination from '@/app/ui/pagination';
-import { Suspense } from 'react';
+import { Suspense } from 'react'; 
 import Search from '@/app/ui/search';
+import { TableSkeleton } from '@/app/ui/skeletons'; 
 
 // Tipe data untuk kejelasan
 interface Product {
@@ -109,7 +110,8 @@ export default async function ProductsPage({
         </div>
       </div>
 
-      <Suspense fallback={<div className="text-center">Memuat produk...</div>}>
+      {/* Gunakan Suspense untuk menampilkan skeleton saat data dimuat */}
+      <Suspense fallback={<TableSkeleton />}>
         <ProductList initialProducts={products} categories={categories} />
       </Suspense>
 

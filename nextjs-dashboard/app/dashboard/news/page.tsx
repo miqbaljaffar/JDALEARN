@@ -36,7 +36,12 @@ export default function NewsManagementPage() {
     try {
       const res = await fetch('/api/news');
       const data = await res.json();
-      setNews(data);
+      // Pastikan untuk mengambil array 'news' dari objek response
+      if (data && Array.isArray(data.news)) {
+        setNews(data.news);
+      } else {
+        setNews([]);
+      }
     } catch (error) {
       console.error("Gagal mengambil data berita:", error);
     } finally {

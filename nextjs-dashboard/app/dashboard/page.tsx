@@ -3,7 +3,7 @@
 import { poppins } from '@/app/ui/fonts';
 import RevenueChart from '@/app/dashboard/ui/revenue-chart'; 
 import { useEffect, useState } from 'react';
-
+import { DashboardSkeleton } from '@/app/ui/skeletons'; 
 // Tipe data untuk statistik
 interface Stats {
   totalRevenue: number;
@@ -35,22 +35,15 @@ export default function DashboardPage() {
     const fetchStats = async () => {
       try {
         const res = await fetch('/api/dashboard/stats');
-
-        // --- AWAL PERBAIKAN ---
-        // Cek apakah respons dari server berhasil (status code 200-299)
         if (!res.ok) {
-          // Jika tidak, jangan coba parsing sebagai JSON.
-          // Buat pesan error yang informatif dan lempar sebagai error.
-          const errorText = await res.text(); // Ambil isi respons (bisa jadi HTML atau teks biasa)
+          const errorText = await res.text();
           throw new Error(`Gagal mengambil data: Status ${res.status}. Respons: ${errorText.substring(0, 100)}...`);
         }
-        // --- AKHIR PERBAIKAN ---
-
         const data = await res.json();
         setStats(data);
       } catch (err: any) {
         console.error("Kesalahan pada fetchStats:", err);
-        setError(err.message); // Simpan pesan error untuk ditampilkan di UI
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -58,11 +51,11 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  // Tampilkan skeleton saat isLoading true
   if (isLoading) {
-    return <div className="card text-center">Memuat data dashboard...</div>;
+    return <DashboardSkeleton />;
   }
 
-  // Tampilkan pesan error jika ada
   if (error) {
     return (
         <div className="card text-center bg-red-50 border-red-500">

@@ -35,7 +35,12 @@ export default function OrdersPage() {
       const res = await fetch('/api/orders');
       if (!res.ok) throw new Error("Gagal mengambil data pesanan.");
       const data = await res.json();
-      setOrders(data);
+      // Pastikan untuk mengambil array 'orders' dari objek response
+      if(data && Array.isArray(data.orders)) {
+        setOrders(data.orders);
+      } else {
+        setOrders([]);
+      }
     } catch (error) {
       console.error(error);
     } finally {

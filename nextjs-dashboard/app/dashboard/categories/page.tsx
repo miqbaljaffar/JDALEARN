@@ -18,7 +18,13 @@ export default function CategoriesManagementPage() {
     try {
       const res = await fetch('/api/categories');
       const data = await res.json();
-      setCategories(data);
+      // Pastikan untuk mengambil array 'categories' dari objek response
+      if (data && Array.isArray(data.categories)) {
+        setCategories(data.categories);
+      } else {
+        // Fallback jika format data tidak sesuai dugaan
+        setCategories([]);
+      }
     } catch (error) {
       console.error("Gagal mengambil kategori:", error);
     } finally {

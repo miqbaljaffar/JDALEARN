@@ -4,7 +4,9 @@ import Image from 'next/image';
 import ProfileDropdown from './ui/ProfileDropdown';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import './globals.css';
-import Providers from './providers'; 
+import Providers from './providers';
+// Impor ikon dari react-icons
+import { FaInstagram, FaLinkedin } from 'react-icons/fa';
 
 export const metadata = {
   title: 'Ztyle App',
@@ -19,7 +21,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={poppins.className}>
-        {/* 2. Bungkus semua konten dengan Provider */}
         <Providers>
           <header className="header">
             <nav className="nav">
@@ -66,10 +67,13 @@ export default function RootLayout({
               </div>
               <div className="footer-section">
                 <h3>Ikuti Kami</h3>
-                <div className="social-icons">
-                  <a href="#" aria-label="Facebook">FB</a>
-                  <a href="#" aria-label="Twitter">TW</a>
-                  <a href="#" aria-label="Instagram">IG</a>
+                <div className="social-icons" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                  <a href="https://www.instagram.com/miqbaljaffar_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <FaInstagram size={24} className="social-icon-item" />
+                  </a>
+                  <a href="https://www.linkedin.com/in/mohammad-iqbal-jaffar-091939290/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                    <FaLinkedin size={24} className="social-icon-item" />
+                  </a>
                 </div>
               </div>
             </div>

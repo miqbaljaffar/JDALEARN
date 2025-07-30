@@ -1,6 +1,9 @@
 'use client'
 import { useState } from 'react'
 
+// Impor ikon WhatsApp dari library populer
+import { FaWhatsapp } from 'react-icons/fa';
+
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
@@ -10,7 +13,7 @@ export default function Contact() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Thank you for your message! We will get back to you soon.')
+    alert('Terima kasih atas pesan Anda! Kami akan segera menghubungi Anda kembali.')
     setFormData({ name: '', email: '', message: '' })
   }
 
@@ -21,23 +24,27 @@ export default function Contact() {
     })
   }
 
+  const whatsappNumber = "6281388670054";
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Halo%20Ztyle,%20saya%20tertarik%20dengan%20produk%20Anda.`;
+
+
   return (
     <div>
       <div className="card">
-        <h1>Contact Us</h1>
+        <h1>Hubungi Kami</h1>
         <p>
-          Have a question or want to get in touch? We'd love to hear from you. 
-          Send us a message and we'll respond as soon as possible.
+          Punya pertanyaan atau ingin berdiskusi? Kami akan sangat senang mendengar dari Anda.
+          Kirimkan pesan dan kami akan merespons sesegera mungkin.
         </p>
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
         <div className="card">
-          <h2>Get in Touch</h2>
+          <h2>Kirim Pesan</h2>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
-                Name
+                Nama
               </label>
               <input
                 type="text"
@@ -45,6 +52,7 @@ export default function Contact() {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                placeholder="Nama Lengkap Anda"
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -66,6 +74,7 @@ export default function Contact() {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                placeholder="Alamat email aktif"
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -79,7 +88,7 @@ export default function Contact() {
             
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
-                Message
+                Pesan Anda
               </label>
               <textarea
                 name="message"
@@ -87,6 +96,7 @@ export default function Contact() {
                 onChange={handleChange}
                 required
                 rows={5}
+                placeholder="Tuliskan pertanyaan atau pesan Anda di sini..."
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -100,37 +110,44 @@ export default function Contact() {
             </div>
             
             <button type="submit" className="btn">
-              Send Message
+              Kirim Pesan
             </button>
           </form>
         </div>
         
         <div className="card">
-          <h2>Contact Information</h2>
+          <h2>Informasi Kontak</h2>
+          <div style={{ marginBottom: '20px' }}>
+            <h3><a href={whatsappUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
+                <FaWhatsapp size={24} color="#25D366" /> WhatsApp
+            </a></h3>
+            <p><a href={whatsappUrl} target="_blank" rel="noopener noreferrer" style={{textDecoration: 'none', color: '#007bff'}}>+62 813-8867-0054</a></p>
+          </div>
+
           <div style={{ marginBottom: '20px' }}>
             <h3>📧 Email</h3>
-            <p>contact@myapp.com</p>
+            <p>kontak@ztyle.com</p>
           </div>
           
           <div style={{ marginBottom: '20px' }}>
-            <h3>📱 Phone</h3>
+            <h3>📱 Telepon</h3>
             <p>+62 123 456 7890</p>
           </div>
           
           <div style={{ marginBottom: '20px' }}>
-            <h3>📍 Address</h3>
+            <h3>📍 Alamat</h3>
             <p>
               Jalan Raya No. 123<br />
-              Bandung, West Java 40123<br />
+              Bandung, Jawa Barat 40123<br />
               Indonesia
             </p>
           </div>
           
           <div>
-            <h3>🕒 Business Hours</h3>
-            <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-            <p>Saturday: 9:00 AM - 2:00 PM</p>
-            <p>Sunday: Closed</p>
+            <h3>🕒 Jam Operasional</h3>
+            <p>Senin - Jumat: 09:00 - 18:00 WIB</p>
+            <p>Sabtu: 09:00 - 14:00 WIB</p>
+            <p>Minggu: Libur</p>
           </div>
         </div>
       </div>
