@@ -1,11 +1,7 @@
-/* app/globals.css */
-
-/* 1. Muat Tailwind CSS (dari file ui/global.css) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 2. Style kustom Anda */
 * {
   margin: 0;
   padding: 0;
@@ -13,7 +9,6 @@
 }
 
 body {
-  /* Font akan diatur dari layout.tsx, ini adalah fallback & pengaturan dasar */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
   color: #333; /* Warna teks lebih lembut dari hitam pekat */

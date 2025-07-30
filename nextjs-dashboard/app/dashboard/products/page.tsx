@@ -11,6 +11,7 @@ interface Product {
   id: number;
   name: string;
   price: number;
+  stock: number; // BENAR: Properti stok sudah ada
   category: { id: number; name: string; };
   imageUrl: string;
   description?: string;
@@ -44,6 +45,7 @@ function ProductsManagementComponent() {
     name: '',
     price: '',
     categoryId: '',
+    stock: '0', // BENAR: Nilai awal stok sudah ada
     imageUrl: '/products/default.jpg',
     description: '',
   });
@@ -133,6 +135,7 @@ function ProductsManagementComponent() {
     const productData = {
       ...formData,
       price: parseInt(formData.price),
+      stock: parseInt(formData.stock), // BENAR: Konversi stok ke integer
       categoryId: parseInt(formData.categoryId),
       imageUrl: imageUrl, 
     };
@@ -177,6 +180,7 @@ function ProductsManagementComponent() {
     setFormData({
       name: product.name,
       price: product.price.toString(),
+      stock: product.stock.toString(), // BENAR: Mengisi form dengan data stok
       categoryId: product.categoryId.toString(),
       imageUrl: product.imageUrl,
       description: product.description || '',
@@ -189,7 +193,8 @@ function ProductsManagementComponent() {
     setShowForm(false);
     setIsEditing(null);
     setSelectedFile(null);
-    setFormData({ name: '', price: '', categoryId: '', imageUrl: '/products/default.jpg', description: '' });
+    // PERBAIKAN: Tambahkan reset untuk field 'stock'
+    setFormData({ name: '', price: '', categoryId: '', stock: '0', imageUrl: '/products/default.jpg', description: '' });
   };
 
   if (isLoading && products.length === 0) {
@@ -216,6 +221,8 @@ function ProductsManagementComponent() {
           <form onSubmit={handleSubmit}>
             <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Nama Produk" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Harga" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
+            {/* BENAR: Input untuk stok sudah ada */}
+            <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} placeholder="Jumlah Stok" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <select
               value={formData.categoryId}
               onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
@@ -256,6 +263,7 @@ function ProductsManagementComponent() {
                 <th style={{ padding: '12px', textAlign: 'left' }}>Gambar</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Nama</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Harga</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>Stok</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Kategori</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Aksi</th>
               </tr>
@@ -268,6 +276,8 @@ function ProductsManagementComponent() {
                   </td>
                   <td style={{ padding: '12px' }}>{product.name}</td>
                   <td style={{ padding: '12px' }}>Rp{product.price.toLocaleString('id-ID')}</td>
+                  {/* PERBAIKAN: Menampilkan data stok dan memperbaiki urutan kolom */}
+                  <td style={{ padding: '12px' }}>{product.stock}</td>
                   <td style={{ padding: '12px' }}>{product.category?.name || 'N/A'}</td>
                   <td style={{ padding: '12px' }}>
                     <button onClick={() => handleEdit(product)} className="btn" style={{ marginRight: '8px', padding: '6px 12px', fontSize: '12px' }}>Edit</button>

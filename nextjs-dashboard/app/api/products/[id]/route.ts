@@ -6,13 +6,13 @@ interface Params {
   params: { id: string };
 }
 
-// Mengambil satu produk berdasarkan ID
+// Mengambil satu produk berdasarkan ID (Tidak ada perubahan)
 export async function GET(request: Request, { params }: Params) {
   try {
     const id = parseInt(params.id);
     const product = await prisma.product.findUnique({
       where: { id },
-      include: { category: true }, // Sertakan juga info kategori
+      include: { category: true },
     });
 
     if (!product) {
@@ -38,6 +38,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       data: {
         name: sanitizedData.name,
         price: sanitizedData.price,
+        stock: sanitizedData.stock, // <-- TAMBAHKAN BARIS INI
         imageUrl: sanitizedData.imageUrl,
         description: sanitizedData.description,
         features: sanitizedData.features,
@@ -52,7 +53,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-// Menghapus produk berdasarkan ID
+// Menghapus produk berdasarkan ID (Tidak ada perubahan)
 export async function DELETE(request: Request, { params }: Params) {
   try {
     const id = parseInt(params.id);

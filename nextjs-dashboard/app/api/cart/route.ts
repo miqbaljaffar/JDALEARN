@@ -47,8 +47,6 @@ export async function GET() {
   }
 }
 
-
-// --- PERBAIKAN DI FUNGSI POST ---
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -60,18 +58,18 @@ export async function POST(request: Request) {
     if (!productId || !quantity) {
       return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
     }
-    
-    // --- TAMBAHAN VALIDASI ---
-    // Cek dulu apakah produknya ada di database
+
     const product = await prisma.product.findUnique({
       where: { id: productId },
     });
 
-    // Jika produk tidak ditemukan, kirim error yang jelas
     if (!product) {
       return NextResponse.json({ message: 'Produk tidak ditemukan.' }, { status: 404 });
     }
-    // --- AKHIR TAMBAHAN VALIDASI ---
+
+    if (product.stock < quantity) {
+      return NextResponse.json({ message: `Stok tidak mencukupi. Sisa stok: ${product.stock}` }, { status: 400 });
+    }
 
     const cart = await getOrCreateCart(session.user.id);
 
