@@ -5,13 +5,14 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Pagination from '@/app/ui/pagination';
 import { TableSkeleton } from '@/app/ui/skeletons';
+import { toast } from 'sonner';
 
 // Interface untuk data Product dan Category
 interface Product {
   id: number;
   name: string;
   price: number;
-  stock: number; // BENAR: Properti stok sudah ada
+  stock: number;
   category: { id: number; name: string; };
   imageUrl: string;
   description?: string;
@@ -45,7 +46,7 @@ function ProductsManagementComponent() {
     name: '',
     price: '',
     categoryId: '',
-    stock: '0', // BENAR: Nilai awal stok sudah ada
+    stock: '0',
     imageUrl: '/products/default.jpg',
     description: '',
   });
@@ -56,7 +57,7 @@ function ProductsManagementComponent() {
       setIsLoading(true);
       try {
         const [productsRes, categoriesRes] = await Promise.all([
-          fetch(`/api/products?page=${currentPage}`), // Menggunakan currentPage dari URL
+          fetch(`/api/products?page=${currentPage}`), 
           fetch('/api/categories')
         ]);
         const productsData = await productsRes.json();
@@ -73,6 +74,7 @@ function ProductsManagementComponent() {
 
       } catch (error) {
         console.error("Gagal mengambil data:", error);
+        toast.error("Gagal memuat data produk atau kategori.");
       } finally {
         setIsLoading(false);
       }
@@ -90,6 +92,7 @@ function ProductsManagementComponent() {
       setTotalPages(productsData.totalPages);
     } catch (error) {
         console.error("Gagal memuat ulang data:", error);
+        toast.error("Gagal memuat ulang data produk.");
     } finally {
         setIsLoading(false);
     }
@@ -104,7 +107,7 @@ function ProductsManagementComponent() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.categoryId) {
-      alert("Nama Produk, Harga, dan ID Kategori wajib diisi.");
+      toast.error("Nama Produk, Harga, dan Kategori wajib diisi.");
       return;
     }
     setUploading(true);
@@ -126,7 +129,7 @@ function ProductsManagementComponent() {
         }
       } catch (error) {
         console.error(error);
-        alert('Terjadi kesalahan saat mengunggah gambar.');
+        toast.error('Terjadi kesalahan saat mengunggah gambar.');
         setUploading(false);
         return;
       }
@@ -135,7 +138,7 @@ function ProductsManagementComponent() {
     const productData = {
       ...formData,
       price: parseInt(formData.price),
-      stock: parseInt(formData.stock), // BENAR: Konversi stok ke integer
+      stock: parseInt(formData.stock), 
       categoryId: parseInt(formData.categoryId),
       imageUrl: imageUrl, 
     };
@@ -154,33 +157,45 @@ function ProductsManagementComponent() {
         throw new Error('Gagal menyimpan data produk.');
       }
       
+      toast.success(isEditing ? 'Produk berhasil diperbarui!' : 'Produk baru berhasil ditambahkan!');
       resetForm();
       await refetchCurrentPage();
     } catch (error) {
       console.error("Gagal menyimpan produk:", error);
-      alert('Gagal menyimpan produk.');
+      toast.error('Gagal menyimpan produk.');
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-      try {
-        await fetch(`/api/products/${id}`, { method: 'DELETE' });
-        await refetchCurrentPage();
-      } catch (error) {
-        console.error("Gagal menghapus produk:", error);
-      }
-    }
+    toast('Apakah Anda yakin ingin menghapus produk ini?', {
+      action: {
+        label: 'Hapus',
+        onClick: async () => {
+          try {
+            await fetch(`/api/products/${id}`, { method: 'DELETE' });
+            toast.success('Produk berhasil dihapus.');
+            await refetchCurrentPage();
+          } catch (error) {
+            console.error("Gagal menghapus produk:", error);
+            toast.error('Gagal menghapus produk.');
+          }
+        },
+      },
+      cancel: {
+        label: 'Batal',
+        onClick: () => {}, 
+      },
+    });
   };
-
+  
   const handleEdit = (product: Product) => {
     setIsEditing(product.id);
     setFormData({
       name: product.name,
       price: product.price.toString(),
-      stock: product.stock.toString(), // BENAR: Mengisi form dengan data stok
+      stock: product.stock.toString(), 
       categoryId: product.categoryId.toString(),
       imageUrl: product.imageUrl,
       description: product.description || '',
@@ -193,7 +208,6 @@ function ProductsManagementComponent() {
     setShowForm(false);
     setIsEditing(null);
     setSelectedFile(null);
-    // PERBAIKAN: Tambahkan reset untuk field 'stock'
     setFormData({ name: '', price: '', categoryId: '', stock: '0', imageUrl: '/products/default.jpg', description: '' });
   };
 
@@ -221,7 +235,6 @@ function ProductsManagementComponent() {
           <form onSubmit={handleSubmit}>
             <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Nama Produk" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Harga" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-            {/* BENAR: Input untuk stok sudah ada */}
             <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} placeholder="Jumlah Stok" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <select
               value={formData.categoryId}
@@ -276,7 +289,6 @@ function ProductsManagementComponent() {
                   </td>
                   <td style={{ padding: '12px' }}>{product.name}</td>
                   <td style={{ padding: '12px' }}>Rp{product.price.toLocaleString('id-ID')}</td>
-                  {/* PERBAIKAN: Menampilkan data stok dan memperbaiki urutan kolom */}
                   <td style={{ padding: '12px' }}>{product.stock}</td>
                   <td style={{ padding: '12px' }}>{product.category?.name || 'N/A'}</td>
                   <td style={{ padding: '12px' }}>

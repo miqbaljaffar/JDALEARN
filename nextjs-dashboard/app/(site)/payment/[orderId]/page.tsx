@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-
+import { toast } from 'sonner';
 interface Order {
   id: number;
   totalAmount: number;
@@ -63,12 +63,10 @@ export default function PaymentPage() {
     formData.append('file', selectedFile);
 
     try {
-      // 1. Upload gambar
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
       const uploadData = await uploadRes.json();
       if (!uploadData.success) throw new Error('Gagal mengunggah gambar.');
 
-      // 2. Simpan URL gambar ke order
       const paymentRes = await fetch(`/api/orders/${orderId}/payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,17 +75,18 @@ export default function PaymentPage() {
 
       if (!paymentRes.ok) throw new Error('Gagal menyimpan bukti pembayaran.');
 
-      alert('Bukti pembayaran berhasil diunggah! Pesanan Anda akan segera diproses.');
-      router.push('/profile');
+      toast.success('Bukti pembayaran berhasil diunggah! Pesanan Anda akan segera diproses.');
+      router.push('/profile/orders');
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsUploading(false);
     }
   };
 
   if (isLoading) return <div className="card text-center">Memuat...</div>;
-  if (error) return <div className="card text-center text-red-600">{error}</div>;
+  if (error && !isUploading) return <div className="card text-center text-red-600">{error}</div>; // Sembunyikan error lama saat upload
   if (!order) return <div className="card text-center">Pesanan tidak ditemukan.</div>;
 
   const paymentInfo = paymentDetails[order.paymentMethod.toLowerCase()];
@@ -114,7 +113,6 @@ export default function PaymentPage() {
         <h2 className="text-xl font-semibold mb-4">Unggah Bukti Pembayaran</h2>
         <form onSubmit={handleSubmitProof}>
           <p className="text-sm text-gray-500 mb-4">Pastikan gambar bukti transfer (struk) terlihat jelas dan tidak buram.</p>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
           <input type="file" onChange={handleFileChange} accept="image/*" required className="input-field w-full"/>
           {selectedFile && (
             <div className="mt-4">

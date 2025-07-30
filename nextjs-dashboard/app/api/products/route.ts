@@ -14,7 +14,7 @@ const productSchema = z.object({
   specifications: z.record(z.any()).optional(),
 });
 
-// 2. Modifikasi fungsi GET untuk menangani filter
+// Modifikasi fungsi GET untuk menangani filter dan sorting
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -22,10 +22,11 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '9');
     const skip = (page - 1) * limit;
 
-    const query = searchParams.get('query') || undefined; // Ambil query pencarian
+    const query = searchParams.get('query') || undefined;
     const categoryIds = searchParams.getAll('categoryId').map(id => parseInt(id)).filter(id => !isNaN(id));
     const minPrice = searchParams.has('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
     const maxPrice = searchParams.has('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
+    const sort = searchParams.get('sort') || 'newest'; // Ambil parameter sort
 
     const where: any = {};
 
@@ -49,6 +50,21 @@ export async function GET(request: NextRequest) {
         where.price.lte = maxPrice;
       }
     }
+    
+    // Tentukan klausa orderBy berdasarkan parameter sort
+    const orderBy: any = {};
+    if (sort === 'price-asc') {
+      orderBy.price = 'asc';
+    } else if (sort === 'price-desc') {
+      orderBy.price = 'desc';
+    } else if (sort === 'popularity') {
+      orderBy.reviews = {
+        _count: 'desc',
+      };
+    } else { 
+      orderBy.createdAt = 'desc';
+    }
+
 
     // Hitung total produk yang cocok dengan filter untuk informasi pagination
     const totalProducts = await prisma.product.count({ where });
@@ -57,13 +73,15 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         category: true,
+        _count: { 
+          select: { reviews: true },
+        },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy, 
       skip: skip,
       take: limit,
     });
+    
     return NextResponse.json({
       products,
       totalProducts,
@@ -80,7 +98,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    // Sanitasi seluruh objek sebelum validasi
     const sanitizedData = sanitizeObject(data);
     const validatedData = productSchema.parse(sanitizedData);
 

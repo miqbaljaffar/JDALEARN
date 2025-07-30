@@ -4,6 +4,7 @@ import Pagination from '@/app/ui/pagination';
 import { Suspense } from 'react';
 import Search from '@/app/ui/search';
 import { TableSkeleton } from '@/app/ui/skeletons';
+import SortDropdown from '@/app/ui/products/SortDropdown'; 
 
 // Definisikan tipe untuk kejelasan
 interface Product {
@@ -13,6 +14,7 @@ interface Product {
   category: { name: string };
   imageUrl: string;
   rating: number;
+  stock: number;
 }
 
 interface Category {
@@ -27,9 +29,7 @@ interface SearchParams {
 
 export const dynamic = 'force-dynamic';
 
-// --- AWAL PERUBAHAN ---
 async function getProductsAndCategories(searchParamsPromise: Promise<SearchParams>) {
-  // Await searchParams untuk mendapatkan objeknya
   const searchParams = await searchParamsPromise;
 
   const query = searchParams?.query as string | undefined;
@@ -52,8 +52,8 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
   const maxPrice = searchParams?.maxPrice
     ? parseFloat(searchParams.maxPrice as string)
     : undefined;
-
-  // --- AKHIR PERUBAHAN (Logika di bawah ini tetap sama) ---
+  
+  const sort = searchParams?.sort as string | undefined || 'newest'; 
 
   const whereClause: any = {};
 
@@ -74,12 +74,32 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
     if (maxPrice !== undefined && maxPrice > 0)
       whereClause.price.lte = maxPrice;
   }
+  
+  // Tentukan klausa orderBy
+  const orderBy: any = {};
+  if (sort === 'price-asc') {
+    orderBy.price = 'asc';
+  } else if (sort === 'price-desc') {
+    orderBy.price = 'desc';
+  } else if (sort === 'popularity') {
+      orderBy.reviews = {
+        _count: 'desc',
+      };
+  } else {
+    orderBy.createdAt = 'desc';
+  }
+
 
   const [productsData, totalProducts, categories] = await Promise.all([
     prisma.product.findMany({
       where: whereClause,
-      include: { category: true },
-      orderBy: { createdAt: 'desc' },
+      include: { 
+        category: true,
+        _count: { 
+          select: { reviews: true },
+        },
+      },
+      orderBy: orderBy, 
       skip: skip,
       take: limit,
     }),
@@ -89,7 +109,7 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
 
   const productsWithRating = productsData.map((p: any) => ({
     ...p,
-    rating: 4.5, // Rating ini masih statis, bisa dikembangkan nanti
+    rating: 4.5, 
   }));
 
   return {
@@ -101,8 +121,7 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
 }
 
 // Komponen Halaman Utama (Server Component)
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) { // Perbarui tipe di sini
-  // Langsung teruskan Promise ke fungsi
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) { 
   const { products, totalPages, categories, currentPage } =
     await getProductsAndCategories(searchParams);
 
@@ -111,8 +130,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       <div className="card">
         <h1>Produk Kami</h1>
         <p>Jelajahi koleksi pakaian berkualitas tinggi dari kami, siap untuk Anda miliki.</p>
-        <div className="mt-4">
-          <Search placeholder="Cari produk..." />
+        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex-grow">
+            <Search placeholder="Cari produk..." />
+          </div>
+          <div className="w-full md:w-auto md:min-w-[200px]">
+            <SortDropdown /> 
+          </div>
         </div>
       </div>
 

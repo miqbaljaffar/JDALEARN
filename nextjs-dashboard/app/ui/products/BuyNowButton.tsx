@@ -8,6 +8,7 @@ interface BuyNowButtonProps {
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
+  disabled?: boolean;
 }
 
 export default function BuyNowButton({ productId, className, style, children }: BuyNowButtonProps) {

@@ -17,7 +17,6 @@ import ReviewForm from '@/app/ui/products/ReviewForm';
 // --- DATA FETCHING (Tidak ada perubahan di sini) ---
 const getProductData = unstable_cache(
   async (id: number) => {
-    // ... (isi fungsi ini tetap sama)
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -82,14 +81,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- MAIN COMPONENT ---
 export default async function ProductDetail({ params, searchParams }: Props) {
-  // --- AWAL PERUBAHAN ---
   const { id } = await params; // Await params untuk mendapatkan ID
   const searchParamsObject = await searchParams; // Await searchParams
   
   const productId = parseInt(id, 10);
   const orderItemIdStr = searchParamsObject.order_item_id as string | undefined;
   const orderItemId = orderItemIdStr ? parseInt(orderItemIdStr) : null;
-  // --- AKHIR PERUBAHAN ---
 
   if (isNaN(productId)) {
     notFound();
@@ -124,7 +121,6 @@ export default async function ProductDetail({ params, searchParams }: Props) {
 
   return (
     <div>
-      {/* ... sisa kode JSX tidak berubah ... */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
@@ -153,8 +149,20 @@ export default async function ProductDetail({ params, searchParams }: Props) {
               Rp{product.price.toLocaleString('id-ID')}
             </div>
             <div className="flex items-center gap-4">
-              <AddToCartButton productId={product.id} className="btn flex-1">Tambah ke Keranjang</AddToCartButton>
-              <BuyNowButton productId={product.id} className="btn flex-1 bg-gray-800 hover:bg-gray-700">Beli Sekarang</BuyNowButton>
+              <AddToCartButton 
+                productId={product.id} 
+                className="btn flex-1" 
+                disabled={product.stock === 0}
+              >
+                {product.stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
+              </AddToCartButton>
+              <BuyNowButton 
+                productId={product.id} 
+                className="btn flex-1 bg-gray-800 hover:bg-gray-700"
+                disabled={product.stock === 0}
+              >
+                {product.stock === 0 ? 'Stok Habis' : 'Beli Sekarang'}
+              </BuyNowButton>
             </div>
           </div>
         </div>

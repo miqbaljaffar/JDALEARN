@@ -14,6 +14,7 @@ interface Product {
   price: number;
   category: { name:string };
   imageUrl: string;
+  stock: number;
 }
 
 interface Category {
@@ -77,14 +78,12 @@ export default function ProductList({ initialProducts, categories }: ProductList
   return (
     // Menggunakan Tailwind CSS untuk layout yang responsif
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
-      {/* Kolom Filter */}
       <aside>
         {categories.length > 0 && (
           <Filter onFilterChange={fetchProducts} categories={categories} />
         )}
       </aside>
 
-      {/* Kolom Daftar Produk */}
       <div>
         {isLoading ? (
           <div className="flex h-96 items-center justify-center text-gray-500">Memuat produk...</div>
@@ -112,6 +111,11 @@ export default function ProductList({ initialProducts, categories }: ProductList
                       className="object-cover transition-transform duration-300 hover:scale-105"
                       onError={(e) => e.currentTarget.src = '/products/default.jpg'}
                     />
+                    {product.stock === 0 && (
+                      <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-full z-10">
+                        STOK HABIS
+                      </div>
+                    )}
                   </div>
                 </Link>
                 <div className="product-info flex flex-grow flex-col p-4">
@@ -126,8 +130,9 @@ export default function ProductList({ initialProducts, categories }: ProductList
                     <AddToCartButton
                       productId={product.id}
                       className="btn flex-1 bg-gray-800 text-white hover:bg-gray-700"
+                      disabled={product.stock === 0}
                     >
-                      Tambah Keranjang
+                      {product.stock === 0 ? 'Stok Habis' : 'Tambah Keranjang'}
                     </AddToCartButton>
                     <Link 
                       href={`/products/${product.id}`} 

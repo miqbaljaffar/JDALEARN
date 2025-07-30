@@ -2,13 +2,15 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toast } from 'sonner';
 
 // Buat interface props agar komponen lebih fleksibel
 interface AddToCartButtonProps {
   productId: number;
-  className?: string; // class CSS opsional
-  style?: React.CSSProperties; // style inline opsional
-  children: React.ReactNode; // untuk teks tombol (e.g., "Tambah ke Keranjang")
+  className?: string; 
+  style?: React.CSSProperties; 
+  children: React.ReactNode;
+  disabled?: boolean;
 }
 
 export default function AddToCartButton({ productId, className, style, children }: AddToCartButtonProps) {
@@ -16,7 +18,6 @@ export default function AddToCartButton({ productId, className, style, children 
   const router = useRouter();
 
   const handleAddToCart = async () => {
-    // Jika belum login, arahkan ke halaman login
     if (status === 'unauthenticated') {
       router.push('/login');
       return;
@@ -29,20 +30,19 @@ export default function AddToCartButton({ productId, className, style, children 
         body: JSON.stringify({ productId: productId, quantity: 1 }),
       });
       
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error('Gagal menambahkan ke keranjang');
+        throw new Error(data.message || 'Gagal menambahkan ke keranjang');
       }
       
-      alert('Produk berhasil ditambahkan ke keranjang!');
-      // Kita hapus window.location.reload() agar tidak ada refresh halaman
+      toast.success('Produk berhasil ditambahkan ke keranjang!');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Gagal menambahkan produk ke keranjang.');
+      toast.error(error.message || 'Gagal menambahkan produk ke keranjang.');
     }
   };
   
-  // Gunakan props untuk mengatur tampilan dan isi tombol
   return (
     <button onClick={handleAddToCart} className={className} style={style}>
       {children}

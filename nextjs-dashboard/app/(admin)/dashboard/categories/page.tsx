@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, FormEvent } from 'react';
+import { toast } from 'sonner';
 
 interface Category {
   id: number;
@@ -39,7 +40,7 @@ export default function CategoriesManagementPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!categoryName) {
-      alert('Nama kategori tidak boleh kosong.');
+      toast.error('Nama kategori tidak boleh kosong.');
       return;
     }
     const url = editingCategoryId ? `/api/categories/${editingCategoryId}` : '/api/categories';
@@ -53,12 +54,13 @@ export default function CategoriesManagementPage() {
       });
       if (!res.ok) throw new Error('Gagal menyimpan kategori.');
       
+      toast.success(editingCategoryId ? 'Kategori berhasil diperbarui!' : 'Kategori berhasil ditambahkan!');
       setCategoryName('');
       setEditingCategoryId(null);
       fetchCategories();
     } catch (error) {
       console.error(error);
-      alert('Gagal menyimpan kategori.');
+      toast.error('Gagal menyimpan kategori.');
     }
   };
 
@@ -68,19 +70,30 @@ export default function CategoriesManagementPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus kategori ini? Ini bisa gagal jika ada produk yang terkait.')) {
-      try {
-        const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || 'Gagal menghapus kategori.');
-        }
-        fetchCategories();
-      } catch (error: any) {
-        console.error(error);
-        alert(error.message);
-      }
-    }
+    toast('Apakah Anda yakin ingin menghapus kategori ini?', {
+      description: 'Aksi ini bisa gagal jika ada produk yang terkait dengan kategori ini.',
+      action: {
+        label: 'Hapus',
+        onClick: async () => {
+            try {
+              const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+              if (!res.ok) {
+                  const errorData = await res.json();
+                  throw new Error(errorData.message || 'Gagal menghapus kategori.');
+              }
+              toast.success('Kategori berhasil dihapus.');
+              fetchCategories();
+            } catch (error: any) {
+              console.error(error);
+              toast.error(error.message);
+            }
+        },
+      },
+      cancel: {
+        label: 'Batal',
+        onClick: () => {}, 
+      },
+    });
   };
 
   if (isLoading) {
