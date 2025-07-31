@@ -3,7 +3,15 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
-// --- TIDAK PERLU IMPORT TIPE APAPUN DARI PRISMA DI SINI ---
+// --- AWAL PERBAIKAN ---
+// Definisikan interface untuk bentuk data produk yang kita butuhkan
+interface ProductData {
+  id: number;
+  price: number;
+  stock: number;
+  name: string | null;
+}
+// --- AKHIR PERBAIKAN ---
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -24,18 +32,20 @@ export async function POST(request: Request) {
     }
 
     const productIds = items.map((item: any) => item.productId);
-    const productsFromDb = await prisma.product.findMany({
+    const productsFromDb: ProductData[] = await prisma.product.findMany({
         where: { id: { in: productIds } },
     });
     
     // --- AWAL PERBAIKAN ---
-    // Definisikan tipe untuk parameter 'p' secara inline
-    const productMap = new Map(productsFromDb.map((p: { id: number; price: number; stock: number; name: string }) => [p.id, p]));
+    // Gunakan interface yang sudah didefinisikan
+    const productMap = new Map<number, ProductData>(
+      productsFromDb.map((p: ProductData) => [p.id, p])
+    );
     // --- AKHIR PERBAIKAN ---
 
     let totalAmount = 0;
     for (const item of items) {
-        const product = productMap.get(item.productId);
+        const product = productMap.get(item.productId); // Sekarang TypeScript tahu tipe 'product'
         if (!product) {
             throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan.`);
         }
