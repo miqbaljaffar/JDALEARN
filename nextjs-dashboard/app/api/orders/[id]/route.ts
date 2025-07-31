@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
-// Definisikan tipe untuk params agar lebih aman
-interface Params {
+// Definisikan tipe untuk params
+interface RouteParams {
   id: string;
 }
 
 // GET handler untuk mengambil satu pesanan
-export async function GET(request: Request, { params }: { params: Promise<Params> }) { 
+export async function GET(request: Request, { params }: { params: Promise<RouteParams> }) { 
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -21,6 +21,8 @@ export async function GET(request: Request, { params }: { params: Promise<Params
 
         const order = await prisma.order.findUnique({
             where: { id },
+            // Anda mungkin ingin menyertakan item di sini juga
+            include: { items: { include: { product: true } } }
         });
 
         if (!order || (order.userId !== session.user.id && session.user.role !== 'ADMIN')) {
@@ -29,13 +31,13 @@ export async function GET(request: Request, { params }: { params: Promise<Params
         
         return NextResponse.json(order);
     } catch (error) {
+        console.error("Gagal mengambil pesanan:", error);
         return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
     }
 }
 
-
 // PUT handler untuk admin mengupdate status pesanan
-export async function PUT(request: Request, { params }: { params: Promise<Params> }) { // 1. params sekarang adalah Promise
+export async function PUT(request: Request, { params }: { params: Promise<RouteParams> }) {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

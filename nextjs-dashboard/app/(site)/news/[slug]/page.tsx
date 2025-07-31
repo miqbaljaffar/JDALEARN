@@ -5,21 +5,23 @@ import { unstable_cache } from 'next/cache';
 import { Metadata, ResolvingMetadata } from 'next';
 
 // --- AWAL PERUBAHAN ---
-// Perbarui tipe Props untuk mencerminkan params sebagai Promise
+// Definisikan tipe Props agar konsisten dengan halaman dinamis lainnya.
+// 'params' dan 'searchParams' harus dibungkus dengan Promise.
 type Props = {
-  params: Promise<{ slug: string }>
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 // --- AKHIR PERUBAHAN ---
 
 export async function generateMetadata(
-  { params }: Props, // params sekarang adalah Promise
+  { params }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   // --- AWAL PERUBAHAN ---
-  const { slug } = await params; // Await params untuk mendapatkan slug
-  const newsItem = await getNews(slug);
+  // Gunakan 'await' untuk mendapatkan nilai dari Promise 'params'
+  const { slug } = await params;
   // --- AKHIR PERUBAHAN ---
+  const newsItem = await getNews(slug);
 
   if (!newsItem) {
     return {
@@ -46,12 +48,10 @@ export async function generateMetadata(
         },
       ],
     },
-    // Tambahkan metadataBase untuk mengatasi warning
     metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
   }
 }
 
-// Fungsi getNews tetap sama
 const getNews = unstable_cache(
   async (slug: string) => {
     const newsItem = await prisma.news.findUnique({
@@ -68,10 +68,11 @@ const getNews = unstable_cache(
 );
 
 // --- AWAL PERUBAHAN ---
-export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params; // Await params untuk mendapatkan slug
+// Gunakan 'Props' yang sudah didefinisikan dan 'await' params di dalam komponen
+export default async function NewsDetailPage({ params }: Props) {
+  const { slug } = await params;
   const newsItem = await getNews(slug);
-  // --- AKHIR PERUBAHAN ---
+// --- AKHIR PERUBAHAN ---
 
   const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 

@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { sanitizeInput } from '@/lib/sanitizer'; // Import sanitizer
+import { sanitizeInput } from '@/lib/sanitizer';
 
-interface Params {
-  params: { id: string };
+// Definisikan tipe untuk params
+interface RouteParams {
+  id: string;
 }
 
 // Mengupdate kategori
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: categoryId } = await params;
+    const id = parseInt(categoryId);
     const { name } = await request.json();
     if (!name) {
       return NextResponse.json({ message: "Nama kategori diperlukan" }, { status: 400 });
     }
-    // Sanitasi nama kategori
     const sanitizedName = sanitizeInput(name);
     const updatedCategory = await prisma.category.update({
       where: { id },
@@ -28,9 +29,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // Menghapus kategori
-export async function DELETE(request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: categoryId } = await params;
+    const id = parseInt(categoryId);
     // Tambahan: Cek apakah ada produk yang menggunakan kategori ini
     const productsInCategory = await prisma.product.count({
       where: { categoryId: id },

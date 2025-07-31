@@ -7,7 +7,7 @@ import { unstable_cache } from 'next/cache';
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 import AddToCartButton from '@/app/ui/products/AddToCartButton';
 import BuyNowButton from '@/app/ui/products/BuyNowButton';
@@ -47,15 +47,13 @@ const getProductData = unstable_cache(
 
 // --- METADATA GENERATION ---
 type Props = {
-  params: Promise<{ id: string }>; // Perbarui tipe
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // Perbarui tipe
+  params: Promise<{ id: string }>; 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>; 
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // --- AWAL PERUBAHAN ---
-  const { id } = await params; // Await params untuk mendapatkan ID
+  const { id } = await params; 
   const productId = parseInt(id, 10);
-  // --- AKHIR PERUBAHAN ---
 
   if (isNaN(productId)) return {};
 
@@ -74,15 +72,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [{ url: product.imageUrl, width: 800, height: 600, alt: `Gambar ${product.name}` }],
     },
-    metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'), // Tambahkan metadataBase
+    metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'), 
   };
 }
 
 
 // --- MAIN COMPONENT ---
 export default async function ProductDetail({ params, searchParams }: Props) {
-  const { id } = await params; // Await params untuk mendapatkan ID
-  const searchParamsObject = await searchParams; // Await searchParams
+  const { id } = await params;
+  const searchParamsObject = await searchParams; 
   
   const productId = parseInt(id, 10);
   const orderItemIdStr = searchParamsObject.order_item_id as string | undefined;
@@ -149,20 +147,32 @@ export default async function ProductDetail({ params, searchParams }: Props) {
               Rp{product.price.toLocaleString('id-ID')}
             </div>
             <div className="flex items-center gap-4">
+              {/* --- AWAL PERUBAHAN --- */}
               <AddToCartButton 
-                productId={product.id} 
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  imageUrl: product.imageUrl,
+                }}
                 className="btn flex-1" 
                 disabled={product.stock === 0}
               >
                 {product.stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
               </AddToCartButton>
               <BuyNowButton 
-                productId={product.id} 
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  imageUrl: product.imageUrl,
+                }}
                 className="btn flex-1 bg-gray-800 hover:bg-gray-700"
                 disabled={product.stock === 0}
               >
                 {product.stock === 0 ? 'Stok Habis' : 'Beli Sekarang'}
               </BuyNowButton>
+              {/* --- AKHIR PERUBAHAN --- */}
             </div>
           </div>
         </div>

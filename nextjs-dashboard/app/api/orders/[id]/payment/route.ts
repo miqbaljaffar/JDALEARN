@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 // Definisikan tipe untuk params
 interface RouteParams {
@@ -16,11 +16,8 @@ export async function POST(request: Request, { params }: { params: Promise<Route
   }
 
   try {
-    // --- AWAL PERUBAHAN ---
-    // Gunakan await untuk mendapatkan nilai 'id' dari params
-    const { id: orderId } = await params;
+    const { id: orderId } = await params; // Gunakan await di sini
     const id = parseInt(orderId);
-    // --- AKHIR PERUBAHAN ---
 
     const { paymentProof } = await request.json();
 
