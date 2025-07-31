@@ -3,8 +3,8 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
-// Hapus import PrismaClient yang tidak terpakai di sini jika hanya untuk type `tx`
-// import { PrismaClient } from '@prisma/client';
+// --- PERBAIKAN 1: Tambahkan import Prisma ---
+import { Prisma } from '@prisma/client';
 
 const reviewSchema = z.object({
   productId: z.number(),
@@ -39,11 +39,9 @@ export async function POST(request: Request) {
     if (!orderItem) {
       return NextResponse.json({ message: "Anda tidak dapat memberikan ulasan untuk produk ini atau ulasan sudah ada." }, { status: 403 });
     }
-
-    // --- PERBAIKAN DI SINI ---
-    // Hapus tipe eksplisit 'PrismaClient' dari 'tx'.
-    // Biarkan TypeScript yang menentukan tipenya secara otomatis.
-    const newReview = await prisma.$transaction(async (tx) => {
+    
+    // --- PERBAIKAN 2: Berikan tipe yang benar untuk 'tx' ---
+    const newReview = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const createdReview = await tx.review.create({
         data: {
           rating: validatedData.rating,
@@ -64,7 +62,6 @@ export async function POST(request: Request) {
       maxWait: 15000,
       timeout: 30000, 
     });
-    // --- AKHIR PERBAIKAN ---
 
     return NextResponse.json(newReview, { status: 201 });
 
