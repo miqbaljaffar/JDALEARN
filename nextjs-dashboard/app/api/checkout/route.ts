@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-// --- AWAL PERBAIKAN ---
-// Impor tipe 'Product' dari Prisma Client
-import { Product } from '@prisma/client';
-// --- AKHIR PERBAIKAN ---
+
+// --- TIDAK PERLU IMPORT TIPE APAPUN DARI PRISMA DI SINI ---
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -31,8 +29,8 @@ export async function POST(request: Request) {
     });
     
     // --- AWAL PERBAIKAN ---
-    // Berikan tipe 'Product' pada parameter 'p'
-    const productMap = new Map(productsFromDb.map((p: Product) => [p.id, p]));
+    // Definisikan tipe untuk parameter 'p' secara inline
+    const productMap = new Map(productsFromDb.map((p: { id: number; price: number; stock: number; name: string }) => [p.id, p]));
     // --- AKHIR PERBAIKAN ---
 
     let totalAmount = 0;
