@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { Prisma } from '@prisma/client';
 
 // Definisikan tipe untuk produk yang diambil dari database
 interface ProductFromDb {
@@ -50,7 +49,7 @@ export async function POST(request: Request) {
         totalAmount += product.price * item.quantity;
     }
 
-    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const order = await prisma.$transaction(async (tx: any) => {
       for (const item of items) {
         const product = productMap.get(item.productId);
         if (!product || product.stock < item.quantity) {
