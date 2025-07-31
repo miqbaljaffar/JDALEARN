@@ -9,7 +9,6 @@ import { useCartStore } from '@/app/store/cart';
 import { useEffect, useState } from 'react';
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
-  // Ambil item dari store
   const items = useCartStore((state) => state.items);
   
   // State untuk memastikan render konsisten antara server dan client (menghindari hydration error)
