@@ -47,16 +47,17 @@ const getProductData = unstable_cache(
 
 // --- METADATA GENERATION ---
 // --- AWAL PERBAIKAN ---
-// Perbaiki tipe Props agar tidak menggunakan Promise
+// Definisikan tipe Props sesuai konvensi Next.js 15
 type Props = {
-  params: { id: string }; 
-  searchParams: { [key: string]: string | string[] | undefined }; 
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
-// --- AKHIR PERBAIKAN ---
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = params; 
+  // Gunakan 'await' untuk mendapatkan nilai dari Promise 'params'
+  const { id } = await params;
   const productId = parseInt(id, 10);
+  // --- AKHIR PERBAIKAN ---
 
   if (isNaN(productId)) return {};
 
@@ -75,16 +76,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [{ url: product.imageUrl, width: 800, height: 600, alt: `Gambar ${product.name}` }],
     },
-    metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'), 
+    metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
   };
 }
 
 
 // --- MAIN COMPONENT ---
 export default async function ProductDetail({ params, searchParams }: Props) {
-  const { id } = params;
-  const searchParamsObject = searchParams; 
-  
+  // --- AWAL PERBAIKAN ---
+  // Gunakan 'await' untuk mendapatkan nilai dari Promise
+  const { id } = await params;
+  const searchParamsObject = await searchParams;
+  // --- AKHIR PERBAIKAN ---
+
   const productId = parseInt(id, 10);
   const orderItemIdStr = searchParamsObject.order_item_id as string | undefined;
   const orderItemId = orderItemIdStr ? parseInt(orderItemIdStr) : null;
@@ -112,8 +116,8 @@ export default async function ProductDetail({ params, searchParams }: Props) {
     }
   }
 
-  const productSchema = { /* ... */ };
-  const breadcrumbSchema = { /* ... */ };
+  const productSchema = { /* ... (schema tidak berubah) ... */ };
+  const breadcrumbSchema = { /* ... (schema tidak berubah) ... */ };
 
   const handleReviewSubmitted = async () => {
     'use server'
@@ -150,19 +154,19 @@ export default async function ProductDetail({ params, searchParams }: Props) {
               Rp{product.price.toLocaleString('id-ID')}
             </div>
             <div className="flex items-center gap-4">
-              <AddToCartButton 
+              <AddToCartButton
                 product={{
                   id: product.id,
                   name: product.name,
                   price: product.price,
                   imageUrl: product.imageUrl,
                 }}
-                className="btn flex-1" 
+                className="btn flex-1"
                 disabled={product.stock === 0}
               >
                 {product.stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
               </AddToCartButton>
-              <BuyNowButton 
+              <BuyNowButton
                 product={{
                   id: product.id,
                   name: product.name,
