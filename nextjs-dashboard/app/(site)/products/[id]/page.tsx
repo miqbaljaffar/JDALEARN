@@ -14,7 +14,7 @@ import BuyNowButton from '@/app/ui/products/BuyNowButton';
 import StarRating from '@/app/ui/products/StarRating';
 import ReviewForm from '@/app/ui/products/ReviewForm';
 
-// --- DATA FETCHING (Tidak ada perubahan di sini) ---
+// --- DATA FETCHING ---
 const getProductData = unstable_cache(
   async (id: number) => {
     const product = await prisma.product.findUnique({
@@ -33,10 +33,13 @@ const getProductData = unstable_cache(
     }
 
     const totalReviews = product.reviews.length;
+    
+    // --- AWAL PERBAIKAN ---
     const averageRating =
       totalReviews > 0
-        ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews
+        ? product.reviews.reduce((acc: number, review) => acc + review.rating, 0) / totalReviews
         : 0;
+    // --- AKHIR PERBAIKAN ---
 
     return { product, totalReviews, averageRating: parseFloat(averageRating.toFixed(1)) };
   },
@@ -47,12 +50,12 @@ const getProductData = unstable_cache(
 
 // --- METADATA GENERATION ---
 type Props = {
-  params: Promise<{ id: string }>; 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>; 
+  params: { id: string }; 
+  searchParams: { [key: string]: string | string[] | undefined }; 
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params; 
+  const { id } = params; 
   const productId = parseInt(id, 10);
 
   if (isNaN(productId)) return {};
@@ -79,8 +82,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- MAIN COMPONENT ---
 export default async function ProductDetail({ params, searchParams }: Props) {
-  const { id } = await params;
-  const searchParamsObject = await searchParams; 
+  const { id } = params;
+  const searchParamsObject = searchParams; 
   
   const productId = parseInt(id, 10);
   const orderItemIdStr = searchParamsObject.order_item_id as string | undefined;
@@ -109,8 +112,8 @@ export default async function ProductDetail({ params, searchParams }: Props) {
     }
   }
 
-  const productSchema = { /* ... (schema tidak berubah) ... */ };
-  const breadcrumbSchema = { /* ... (schema tidak berubah) ... */ };
+  const productSchema = { /* ... */ };
+  const breadcrumbSchema = { /* ... */ };
 
   const handleReviewSubmitted = async () => {
     'use server'
@@ -147,7 +150,6 @@ export default async function ProductDetail({ params, searchParams }: Props) {
               Rp{product.price.toLocaleString('id-ID')}
             </div>
             <div className="flex items-center gap-4">
-              {/* --- AWAL PERUBAHAN --- */}
               <AddToCartButton 
                 product={{
                   id: product.id,
@@ -172,7 +174,6 @@ export default async function ProductDetail({ params, searchParams }: Props) {
               >
                 {product.stock === 0 ? 'Stok Habis' : 'Beli Sekarang'}
               </BuyNowButton>
-              {/* --- AKHIR PERUBAHAN --- */}
             </div>
           </div>
         </div>
