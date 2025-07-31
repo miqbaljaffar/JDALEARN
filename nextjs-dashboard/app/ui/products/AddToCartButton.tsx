@@ -1,56 +1,37 @@
 'use client'
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { toast } from 'sonner';
+import { useCartStore } from "@/app/store/cart";
 
-// Buat interface props agar komponen lebih fleksibel
+// Definisikan tipe untuk properti produk yang dibutuhkan
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string;
+}
+
+// Definisikan tipe untuk props komponen
 interface AddToCartButtonProps {
-  productId: number;
+  product: Product; // Sekarang menerima objek produk lengkap
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
   disabled?: boolean; 
 }
 
-export default function AddToCartButton({ productId, className, style, children, disabled }: AddToCartButtonProps) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+export default function AddToCartButton({ product, className, style, children, disabled }: AddToCartButtonProps) {
+  // 1. Ambil aksi `addToCart` langsung dari store Zustand
+  const addToCart = useCartStore((state) => state.addToCart);
 
-  const handleAddToCart = async () => {
-    // Tambahkan pengecekan ini di awal fungsi
-    if (disabled) {
-      toast.error('Stok produk ini sudah habis.');
-      return;
-    }
-
-    if (status === 'unauthenticated') {
-      router.push('/login');
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: productId, quantity: 1 }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Gagal menambahkan ke keranjang');
-      }
-
-      toast.success('Produk berhasil ditambahkan ke keranjang!');
-
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || 'Gagal menambahkan produk ke keranjang.');
-    }
+  const handleAddToCart = () => {
+    // 2. Tidak perlu lagi memeriksa sesi atau memanggil API dari sini
+    if (disabled) return;
+    
+    // 3. Cukup panggil aksi `addToCart` dengan data produk yang diterima dari props
+    addToCart(product); 
   };
 
   return (
-    // Pastikan untuk meneruskan props 'disabled' ke elemen button
     <button onClick={handleAddToCart} className={className} style={style} disabled={disabled}>
       {children}
     </button>

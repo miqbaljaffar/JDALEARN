@@ -1,21 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-
-// Definisikan tipe data
-interface CartItem {
-  id: number;
-  quantity: number;
-  product: {
-    id: number;
-    name: string;
-    price: number;
-    imageUrl: string;
-  }
-}
+import { useCartStore } from '@/app/store/cart';
+import { toast } from 'sonner';
 
 const paymentMethods = [
   { id: 'mbanking', name: 'm-Banking (Virtual Account)' },
@@ -25,62 +15,33 @@ const paymentMethods = [
 ];
 
 export default function CheckoutPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { items: cartItems, updateQuantity, clearCart } = useCartStore();
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // State untuk data checkout
-  const [addressOption, setAddressOption] = useState('default'); // 'default' atau 'new'
+  const [addressOption, setAddressOption] = useState('default');
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0].id);
   const [newAddress, setNewAddress] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Ambil data keranjang saat komponen dimuat
   useEffect(() => {
-    if (status === 'authenticated') {
-      fetch('/api/cart')
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) setCartItems(data);
-          setIsLoading(false);
-        });
-    } else if (status === 'unauthenticated') {
+    if (status === 'unauthenticated') {
       router.push('/login');
     }
   }, [status, router]);
 
-  // Fungsi untuk mengubah kuantitas
-  const handleQuantityChange = async (productId: number, newQuantity: number) => {
-    // Optimistic UI update
-    const originalItems = [...cartItems];
-    const updatedItems = cartItems.map(item =>
-      item.product.id === productId ? { ...item, quantity: newQuantity } : item
-    ).filter(item => item.quantity > 0);
-    setCartItems(updatedItems);
-
-    try {
-      await fetch('/api/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity: newQuantity }),
-      });
-    } catch (error) {
-      console.error("Gagal update kuantitas:", error);
-      setCartItems(originalItems); // Rollback jika gagal
-      alert('Gagal memperbarui keranjang.');
-    }
+  const handleQuantityChange = (productId: number, newQuantity: number) => {
+    updateQuantity(productId, newQuantity);
   };
 
-  // Fungsi untuk menyelesaikan pesanan
   const handlePlaceOrder = async () => {
     const shippingAddress = addressOption === 'default' ? session?.user?.address : newAddress;
     if (!shippingAddress) {
-      alert('Alamat pengiriman wajib diisi.');
+      toast.error('Alamat pengiriman wajib diisi.');
       return;
     }
     if (cartItems.length === 0) {
-      alert('Keranjang Anda kosong.');
+      toast.error('Keranjang Anda kosong.');
       return;
     }
 
@@ -92,35 +53,42 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           shippingAddress: shippingAddress,
           paymentMethod: selectedPayment,
+          items: cartItems.map(item => ({ 
+            productId: item.id, 
+            quantity: item.quantity,
+            price: item.price
+          })),
         }),
       });
 
-      const orderData = await res.json(); // Ambil data pesanan yang baru dibuat
-
+      const orderData = await res.json();
       if (!res.ok) {
         throw new Error(orderData.message || 'Gagal membuat pesanan.');
       }
       
-      // Arahkan ke halaman pembayaran dengan ID pesanan
+      // Kosongkan keranjang di client setelah pesanan berhasil dibuat di server
+      clearCart(); 
+      toast.success('Pesanan berhasil dibuat! Anda akan dialihkan...');
       router.push(`/payment/${orderData.id}`);
+      // Hapus baris yang tidak perlu dan duplikat
 
     } catch (error: any) {
-      alert(error.message);
-    } finally {
-      setIsProcessing(false);
-    }
+      toast.error(error.message);
+      setIsProcessing(false); // Set isProcessing false hanya jika terjadi error
+    } 
+    // finally block dihapus agar isProcessing tidak di-set false saat redirect
   };
   
-  // Hitung total harga
   const totalPrice = useMemo(() => {
-    return cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [cartItems]);
 
-  if (isLoading || status === 'loading') {
-    return <div className="card text-center">Memuat keranjang Anda...</div>
+  // Tampilkan state "Memproses..." agar pesan "Keranjang Kosong" tidak muncul sesaat
+  if (status === 'loading' || isProcessing) {
+    return <div className="card text-center">Memproses pesanan Anda...</div>
   }
 
-  if (!isLoading && cartItems.length === 0) {
+  if (status === 'authenticated' && cartItems.length === 0) {
     return <div className="card text-center">Keranjang Anda kosong. Silakan kembali berbelanja.</div>
   }
 
@@ -128,29 +96,26 @@ export default function CheckoutPage() {
     <div className="card">
       <h1 className="text-3xl font-bold">Checkout</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
-        {/* Kolom Kiri: Detail Pesanan & Alamat */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Daftar Item */}
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Ringkasan Pesanan</h2>
             {cartItems.map(item => (
               <div key={item.id} className="flex items-center gap-4 py-4 border-b last:border-b-0">
-                <Image src={item.product.imageUrl} alt={item.product.name} width={80} height={80} className="object-cover rounded-lg"/>
+                <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="object-cover rounded-lg"/>
                 <div className="flex-grow">
-                  <h3 className="font-semibold">{item.product.name}</h3>
-                  <p className="text-sm text-gray-600">Rp{item.product.price.toLocaleString('id-ID')}</p>
+                  <h3 className="font-semibold">{item.name}</h3>
+                  <p className="text-sm text-gray-600">Rp{item.price.toLocaleString('id-ID')}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleQuantityChange(item.product.id, item.quantity - 1)} className="btn p-2 h-8 w-8">-</button>
+                  <button onClick={() => handleQuantityChange(item.id, item.quantity - 1)} className="btn p-2 h-8 w-8">-</button>
                   <span className="w-8 text-center">{item.quantity}</span>
-                  <button onClick={() => handleQuantityChange(item.product.id, item.quantity + 1)} className="btn p-2 h-8 w-8">+</button>
+                  <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="btn p-2 h-8 w-8">+</button>
                 </div>
-                <strong className="w-28 text-right">Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}</strong>
+                <strong className="w-28 text-right">Rp{(item.price * item.quantity).toLocaleString('id-ID')}</strong>
               </div>
             ))}
           </div>
 
-          {/* Opsi Alamat Pengiriman */}
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Alamat Pengiriman</h2>
             <div className="space-y-4">
@@ -179,7 +144,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Kolom Kanan: Ringkasan & Pembayaran */}
         <div className="lg:col-span-1">
           <div className="card sticky top-24">
              <h2 className="text-xl font-semibold mb-4">Metode Pembayaran</h2>

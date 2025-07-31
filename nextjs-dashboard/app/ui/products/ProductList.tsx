@@ -128,7 +128,12 @@ export default function ProductList({ initialProducts, categories }: ProductList
                   </div>
                   <div className="mt-auto flex gap-2">
                     <AddToCartButton
-                      productId={product.id}
+                      product={{
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        imageUrl: product.imageUrl,
+                      }}
                       className="btn flex-1 bg-gray-800 text-white hover:bg-gray-700"
                       disabled={product.stock === 0}
                     >

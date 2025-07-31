@@ -1,59 +1,55 @@
 'use client'
 
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner"; 
+import { useCartStore } from "@/app/store/cart"; 
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
+// Definisikan tipe untuk properti produk yang dibutuhkan
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string;
+}
+
+// Definisikan tipe untuk props komponen
 interface BuyNowButtonProps {
-  productId: number;
+  product: Product; // Menerima objek produk lengkap
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
-  disabled?: boolean; // Pastikan props disabled diterima
+  disabled?: boolean;
 }
 
-export default function BuyNowButton({ productId, className, style, children, disabled }: BuyNowButtonProps) {
-  const { status } = useSession();
+export default function BuyNowButton({ product, className, style, children, disabled }: BuyNowButtonProps) {
   const router = useRouter();
+  const { status } = useSession();
+  
+  // Ambil aksi `addToCart` dari store
+  const addToCart = useCartStore((state) => state.addToCart); 
 
-  const handleBuyNow = async () => {
-    // Tambahkan pengecekan ini di awal fungsi
+  const handleBuyNow = () => {
     if (disabled) {
-      toast.error('Stok produk ini sudah habis.');
-      return;
+        toast.error('Stok produk ini sudah habis.');
+        return;
     }
-
+    
+    // Pengecekan sesi tetap diperlukan untuk memastikan hanya pengguna yang login
+    // yang dapat melanjutkan ke halaman checkout.
     if (status === 'unauthenticated') {
       router.push('/login');
       return;
     }
 
-    try {
-      // 1. Tambahkan produk ke keranjang
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: productId, quantity: 1 }),
-      });
-
-      if (!res.ok) {
-        // Ambil pesan error dari API
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Gagal menambahkan produk');
-      }
-
-      // 2. Jika berhasil, langsung arahkan ke halaman checkout
-      router.push('/checkout');
-
-    } catch (error: any) {
-      console.error(error);
-      // Tampilkan error menggunakan toast
-      toast.error(error.message || 'Gagal memproses, silakan coba lagi.');
-    }
+    // 1. Panggil aksi `addToCart` dari store
+    addToCart(product);
+    
+    // 2. Langsung arahkan ke halaman checkout
+    router.push('/checkout');
   };
 
   return (
-    // Pastikan untuk meneruskan props 'disabled' ke elemen button
     <button onClick={handleBuyNow} className={className} style={style} disabled={disabled}>
       {children}
     </button>

@@ -11,29 +11,43 @@ export async function POST(request: Request) {
 
   try {
     const userId = session.user.id;
-    const { shippingAddress, paymentMethod } = await request.json();
+    // Ambil 'items' dari body request, bukan hanya alamat dan metode pembayaran
+    const { shippingAddress, paymentMethod, items } = await request.json();
 
     if (!shippingAddress || !paymentMethod) {
       return NextResponse.json({ message: "Alamat pengiriman dan metode pembayaran wajib diisi." }, { status: 400 });
     }
 
-    const cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: { items: { include: { product: true } } },
-    });
-
-    if (!cart || cart.items.length === 0) {
+    // Validasi 'items' yang dikirim dari client
+    if (!items || items.length === 0) {
       return NextResponse.json({ message: "Keranjang belanja kosong." }, { status: 400 });
     }
 
-    const totalAmount = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    // Untuk keamanan, validasi harga dan stok dari database
+    const productIds = items.map((item: any) => item.productId);
+    const productsFromDb = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+    });
+    
+    // Buat map untuk akses data produk dari DB dengan mudah
+    const productMap = new Map(productsFromDb.map(p => [p.id, p]));
+
+    let totalAmount = 0;
+    for (const item of items) {
+        const product = productMap.get(item.productId);
+        if (!product) {
+            throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan.`);
+        }
+        // Gunakan harga dari DB untuk kalkulasi, bukan harga dari client
+        totalAmount += product.price * item.quantity;
+    }
 
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Cek stok untuk semua item di keranjang
-      for (const item of cart.items) {
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
+      // 1. Cek stok untuk semua item di keranjang menggunakan data dari DB
+      for (const item of items) {
+        const product = productMap.get(item.productId);
         if (!product || product.stock < item.quantity) {
-          throw new Error(`Stok untuk produk ${item.product.name} tidak mencukupi.`);
+          throw new Error(`Stok untuk produk ${product?.name || 'yang Anda pilih'} tidak mencukupi.`);
         }
       }
 
@@ -41,15 +55,15 @@ export async function POST(request: Request) {
       const newOrder = await tx.order.create({
         data: {
           userId,
-          totalAmount,
+          totalAmount, // Gunakan totalAmount yang sudah divalidasi
           status: 'PENDING',
           shippingAddress: shippingAddress,
           paymentMethod: paymentMethod,
           items: {
-            create: cart.items.map(item => ({
+            create: items.map((item: any) => ({
               productId: item.productId,
               quantity: item.quantity,
-              price: item.product.price,
+              price: productMap.get(item.productId)!.price, // Simpan harga dari DB
             })),
           },
         },
@@ -57,7 +71,7 @@ export async function POST(request: Request) {
       });
 
       // 3. Kurangi stok produk
-      for (const item of cart.items) {
+      for (const item of items) {
         await tx.product.update({
           where: { id: item.productId },
           data: {
@@ -67,11 +81,9 @@ export async function POST(request: Request) {
           },
         });
       }
-
-      // 4. Hapus item dari keranjang
-      await tx.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
+      
+      // 4. Logika untuk menghapus cart dari DB tidak lagi diperlukan di sini
+      // karena kita memproses 'items' langsung dari client.
       
       return newOrder;
     });
@@ -81,7 +93,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Gagal membuat pesanan:", error);
     // Mengembalikan pesan error yang lebih spesifik jika dari validasi stok
-    if (error.message.startsWith('Stok untuk produk')) {
+    if (error.message.startsWith('Stok untuk produk') || error.message.startsWith('Produk dengan ID')) {
        return NextResponse.json({ message: error.message }, { status: 400 });
     }
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

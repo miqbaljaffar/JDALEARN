@@ -1,15 +1,27 @@
+'use client' 
+
 import Link from 'next/link';
 import Image from 'next/image';
 import ProfileDropdown from '../ui/ProfileDropdown'; 
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { FaInstagram, FaLinkedin } from 'react-icons/fa';
-
-export const metadata = {
-  title: 'Ztyle App',
-  description: 'Created with Next.js and TypeScript',
-};
+import { useCartStore } from '@/app/store/cart'; 
+import { useEffect, useState } from 'react';
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
+  // Ambil item dari store
+  const items = useCartStore((state) => state.items);
+  
+  // State untuk memastikan render konsisten antara server dan client (menghindari hydration error)
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Hitung total item
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+
   return (
     <>
       <header className="header">
@@ -25,8 +37,13 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <li><Link href="/about">About</Link></li>
               <li><Link href="/contact">Contact</Link></li>
             </ul>
-            <Link href="/checkout" className="profile-icon">
-              <ShoppingCartIcon />
+            <Link href="/checkout" className="profile-icon relative">
+              <ShoppingCartIcon className="h-8 w-8"/>
+              {isClient && totalItems > 0 && (
+                <span className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white">
+                  {totalItems}
+                </span>
+              )}
             </Link>
             <ProfileDropdown />
           </div>
