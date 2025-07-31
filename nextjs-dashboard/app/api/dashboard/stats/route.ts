@@ -83,7 +83,7 @@ export async function GET() {
 
     // Hitung produk terlaris
     const productSales: { [key: string]: { name: string; sales: number } } = {};
-    paidOrders.forEach(order => {
+    paidOrders.forEach((order: any) => {
         order.items.forEach((item: any) => {
             if(productSales[item.product.id]) {
                 productSales[item.product.id].sales += item.quantity;
