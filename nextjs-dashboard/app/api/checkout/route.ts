@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
 // --- AWAL PERBAIKAN ---
-// Definisikan interface untuk bentuk data produk yang kita butuhkan
+import { Prisma } from '@prisma/client';
+// --- AKHIR PERBAIKAN ---
+
 interface ProductData {
   id: number;
   price: number;
   stock: number;
   name: string | null;
 }
-// --- AKHIR PERBAIKAN ---
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -36,23 +36,23 @@ export async function POST(request: Request) {
         where: { id: { in: productIds } },
     });
     
-    // --- AWAL PERBAIKAN ---
-    // Gunakan interface yang sudah didefinisikan
     const productMap = new Map<number, ProductData>(
       productsFromDb.map((p: ProductData) => [p.id, p])
     );
-    // --- AKHIR PERBAIKAN ---
 
     let totalAmount = 0;
     for (const item of items) {
-        const product = productMap.get(item.productId); // Sekarang TypeScript tahu tipe 'product'
+        const product = productMap.get(item.productId);
         if (!product) {
             throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan.`);
         }
         totalAmount += product.price * item.quantity;
     }
 
-    const order = await prisma.$transaction(async (tx) => {
+    // --- AWAL PERBAIKAN ---
+    // Tambahkan tipe Prisma.TransactionClient pada parameter 'tx'
+    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // --- AKHIR PERBAIKAN ---
       for (const item of items) {
         const product = productMap.get(item.productId);
         if (!product || product.stock < item.quantity) {
