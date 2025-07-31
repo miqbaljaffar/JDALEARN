@@ -73,9 +73,9 @@ export async function GET() {
     ]);
 
     // Kalkulasi statistik dasar
-    const totalRevenue = paidOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const totalSales = paidOrders.reduce((sum, order) => {
-      return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    const totalRevenue = paidOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+    const totalSales = paidOrders.reduce((sum: number, order: any) => {
+      return sum + order.items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0);
     }, 0);
 
     // Siapkan data untuk grafik penjualan bulanan
@@ -84,7 +84,7 @@ export async function GET() {
     // Hitung produk terlaris
     const productSales: { [key: string]: { name: string; sales: number } } = {};
     paidOrders.forEach(order => {
-        order.items.forEach(item => {
+        order.items.forEach((item: any) => {
             if(productSales[item.product.id]) {
                 productSales[item.product.id].sales += item.quantity;
             } else {
