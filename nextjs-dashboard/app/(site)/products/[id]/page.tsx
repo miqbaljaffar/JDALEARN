@@ -33,10 +33,14 @@ const getProductData = unstable_cache(
     }
 
     const totalReviews = product.reviews.length;
+    
+    // --- AWAL PERBAIKAN ---
+    // Berikan tipe eksplisit untuk parameter 'review'
     const averageRating =
       totalReviews > 0
-        ? product.reviews.reduce((acc: number, review) => acc + review.rating, 0) / totalReviews
+        ? product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / totalReviews
         : 0;
+    // --- AKHIR PERBAIKAN ---
 
     return { product, totalReviews, averageRating: parseFloat(averageRating.toFixed(1)) };
   },
@@ -46,18 +50,14 @@ const getProductData = unstable_cache(
 
 
 // --- METADATA GENERATION ---
-// --- AWAL PERBAIKAN ---
-// Definisikan tipe Props sesuai konvensi Next.js 15
 type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // Gunakan 'await' untuk mendapatkan nilai dari Promise 'params'
   const { id } = await params;
   const productId = parseInt(id, 10);
-  // --- AKHIR PERBAIKAN ---
 
   if (isNaN(productId)) return {};
 
@@ -83,11 +83,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- MAIN COMPONENT ---
 export default async function ProductDetail({ params, searchParams }: Props) {
-  // --- AWAL PERBAIKAN ---
-  // Gunakan 'await' untuk mendapatkan nilai dari Promise
   const { id } = await params;
   const searchParamsObject = await searchParams;
-  // --- AKHIR PERBAIKAN ---
 
   const productId = parseInt(id, 10);
   const orderItemIdStr = searchParamsObject.order_item_id as string | undefined;
