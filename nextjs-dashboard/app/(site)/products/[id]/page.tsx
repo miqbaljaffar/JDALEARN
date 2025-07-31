@@ -33,13 +33,10 @@ const getProductData = unstable_cache(
     }
 
     const totalReviews = product.reviews.length;
-    
-    // --- AWAL PERBAIKAN ---
     const averageRating =
       totalReviews > 0
         ? product.reviews.reduce((acc: number, review) => acc + review.rating, 0) / totalReviews
         : 0;
-    // --- AKHIR PERBAIKAN ---
 
     return { product, totalReviews, averageRating: parseFloat(averageRating.toFixed(1)) };
   },
@@ -49,10 +46,13 @@ const getProductData = unstable_cache(
 
 
 // --- METADATA GENERATION ---
+// --- AWAL PERBAIKAN ---
+// Perbaiki tipe Props agar tidak menggunakan Promise
 type Props = {
   params: { id: string }; 
   searchParams: { [key: string]: string | string[] | undefined }; 
 };
+// --- AKHIR PERBAIKAN ---
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = params; 
