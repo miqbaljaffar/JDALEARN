@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-// --- AWAL PERBAIKAN ---
-import { Prisma } from '@prisma/client';
-// --- AKHIR PERBAIKAN ---
 
-interface ProductData {
-  id: number;
-  price: number;
-  stock: number;
-  name: string | null;
+// --- AWAL PERUBAHAN ---
+// Definisikan tipe untuk produk yang diambil dari database
+interface ProductFromDb {
+    id: number;
+    name: string;
+    price: number;
+    stock: number;
 }
+// --- AKHIR PERUBAHAN ---
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -32,13 +32,14 @@ export async function POST(request: Request) {
     }
 
     const productIds = items.map((item: any) => item.productId);
-    const productsFromDb: ProductData[] = await prisma.product.findMany({
+    const productsFromDb = await prisma.product.findMany({
         where: { id: { in: productIds } },
     });
     
-    const productMap = new Map<number, ProductData>(
-      productsFromDb.map((p: ProductData) => [p.id, p])
-    );
+    // --- AWAL PERUBAHAN ---
+    // Buat map untuk akses data produk dari DB dengan mudah dan berikan tipe eksplisit
+    const productMap = new Map(productsFromDb.map((p: ProductFromDb) => [p.id, p]));
+    // --- AKHIR PERUBAHAN ---
 
     let totalAmount = 0;
     for (const item of items) {
@@ -49,10 +50,7 @@ export async function POST(request: Request) {
         totalAmount += product.price * item.quantity;
     }
 
-    // --- AWAL PERBAIKAN ---
-    // Tambahkan tipe Prisma.TransactionClient pada parameter 'tx'
-    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    // --- AKHIR PERBAIKAN ---
+    const order = await prisma.$transaction(async (tx) => {
       for (const item of items) {
         const product = productMap.get(item.productId);
         if (!product || product.stock < item.quantity) {
