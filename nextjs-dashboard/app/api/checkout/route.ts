@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
-// --- AWAL PERUBAHAN ---
 // Definisikan tipe untuk produk yang diambil dari database
 interface ProductFromDb {
     id: number;
@@ -11,7 +10,6 @@ interface ProductFromDb {
     price: number;
     stock: number;
 }
-// --- AKHIR PERUBAHAN ---
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -36,10 +34,10 @@ export async function POST(request: Request) {
         where: { id: { in: productIds } },
     });
     
-    // --- AWAL PERUBAHAN ---
     // Buat map untuk akses data produk dari DB dengan mudah dan berikan tipe eksplisit
-    const productMap = new Map(productsFromDb.map((p: ProductFromDb) => [p.id, p]));
-    // --- AKHIR PERUBAHAN ---
+    const productMap = new Map<number, ProductFromDb>(
+        productsFromDb.map((p: ProductFromDb) => [p.id, p])
+    );
 
     let totalAmount = 0;
     for (const item of items) {
@@ -47,6 +45,7 @@ export async function POST(request: Request) {
         if (!product) {
             throw new Error(`Produk dengan ID ${item.productId} tidak ditemukan.`);
         }
+        // TypeScript sekarang tahu bahwa product bukan undefined karena sudah di-check di atas
         totalAmount += product.price * item.quantity;
     }
 
