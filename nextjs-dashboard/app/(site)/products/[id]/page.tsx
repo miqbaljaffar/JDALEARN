@@ -1,3 +1,5 @@
+// app/(site)/products/[id]/page.tsx
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -13,6 +15,19 @@ import AddToCartButton from '@/app/ui/products/AddToCartButton';
 import BuyNowButton from '@/app/ui/products/BuyNowButton';
 import StarRating from '@/app/ui/products/StarRating';
 import ReviewForm from '@/app/ui/products/ReviewForm';
+
+// --- Tipe Data untuk Review ---
+// Definisikan tipe untuk objek review agar bisa digunakan ulang
+interface Review {
+  id: number;
+  rating: number;
+  comment: string | null;
+  createdAt: Date;
+  user: {
+    name: string | null;
+  };
+}
+
 
 // --- DATA FETCHING ---
 const getProductData = unstable_cache(
@@ -34,13 +49,10 @@ const getProductData = unstable_cache(
 
     const totalReviews = product.reviews.length;
     
-    // --- AWAL PERBAIKAN ---
-    // Berikan tipe eksplisit untuk parameter 'review'
     const averageRating =
       totalReviews > 0
         ? product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / totalReviews
         : 0;
-    // --- AKHIR PERBAIKAN ---
 
     return { product, totalReviews, averageRating: parseFloat(averageRating.toFixed(1)) };
   },
@@ -196,7 +208,10 @@ export default async function ProductDetail({ params, searchParams }: Props) {
         <h2 className="text-2xl font-bold mb-6">Ulasan Pelanggan ({totalReviews})</h2>
         <div className="space-y-6">
           {totalReviews > 0 ? (
-            product.reviews.map(review => (
+            // --- AWAL PERBAIKAN ---
+            // Berikan tipe eksplisit 'Review' pada parameter review
+            product.reviews.map((review: Review) => (
+            // --- AKHIR PERBAIKAN ---
               <div key={review.id} className="border-b pb-4 last:border-b-0">
                 <div className="flex items-center mb-2">
                   <p className="font-semibold text-lg mr-4">{review.user.name}</p>
