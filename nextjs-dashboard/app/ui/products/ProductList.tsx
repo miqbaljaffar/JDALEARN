@@ -65,7 +65,9 @@ export default function ProductList({ products, categories }: ProductListProps) 
                   </div>
                 </Link>
                 <div className="product-info flex flex-grow flex-col p-4">
-                  <span className="mb-1 text-xs text-gray-500">{product.category.name}</span>
+                  <span className="mb-2 inline-block self-start rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                    {product.category.name}
+                  </span>
                   <h3 className="truncate text-base font-semibold text-gray-800 transition-colors duration-200 group-hover:text-blue-600">
                     {product.name}
                   </h3>

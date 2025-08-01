@@ -119,12 +119,14 @@ body {
 .social-icons a {
   color: #555;
   text-decoration: none;
-  margin-right: 15px;
-  font-size: 18px;
   border: 1px solid #ddd;
-  padding: 5px 10px;
   border-radius: 50%;
   transition: background 0.3s, color 0.3s;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .social-icons a:hover {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
 
 interface Category {
   id: number;
@@ -17,29 +18,48 @@ export default function Filter({ categories }: FilterProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Inisialisasi state dari URL search params
+  // State untuk menyimpan kategori yang dipilih
   const [selectedCategories, setSelectedCategories] = useState<number[]>(
     searchParams.getAll('categoryId').map(Number)
   );
+  
+  // State untuk menyimpan nilai input harga secara langsung
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(searchParams.get('minPrice')) || 0,
     Number(searchParams.get('maxPrice')) || 5000000,
   ]);
-  
-  // useEffect sekarang hanya akan berjalan ketika kategori berubah
-  useEffect(() => {
+
+  // Debounce untuk semua perubahan filter
+  const applyFilters = useDebouncedCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', '1');
 
+    // Handle filter kategori
     params.delete('categoryId');
     if (selectedCategories.length > 0) {
       selectedCategories.forEach(id => params.append('categoryId', String(id)));
     }
 
-    // Hanya update kategori secara otomatis
-    router.replace(`${pathname}?${params.toString()}`);
-  }, [selectedCategories, router, pathname, searchParams]);
+    // Handle filter harga
+    if (priceRange[0] > 0) {
+      params.set('minPrice', String(priceRange[0]));
+    } else {
+      params.delete('minPrice');
+    }
 
+    if (priceRange[1] > 0 && priceRange[1] < 5000000) {
+      params.set('maxPrice', String(priceRange[1]));
+    } else {
+      params.delete('maxPrice');
+    }
+    
+    router.replace(`${pathname}?${params.toString()}`);
+  }, 500); // Waktu debounce 500ms
+
+  // useEffect sekarang hanya memanggil fungsi applyFilters
+  useEffect(() => {
+    applyFilters();
+  }, [selectedCategories, priceRange, applyFilters]);
 
   const handleCategoryChange = (categoryId: number) => {
     setSelectedCategories((prev) =>
@@ -52,20 +72,9 @@ export default function Filter({ categories }: FilterProps) {
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, index: 0 | 1) => {
     const newPriceRange = [...priceRange] as [number, number];
     const value = e.target.value;
-    // Memungkinkan input kosong tanpa langsung diubah menjadi 0
     newPriceRange[index] = value === '' ? 0 : Number(value);
     setPriceRange(newPriceRange);
   };
-  
-  // Fungsi baru untuk menerapkan filter harga saat tombol diklik
-  const handleApplyPriceFilter = () => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', '1');
-    params.set('minPrice', String(priceRange[0]));
-    // Pastikan maxPrice tidak 0 jika inputnya kosong
-    params.set('maxPrice', String(priceRange[1] > 0 ? priceRange[1] : 5000000));
-    router.replace(`${pathname}?${params.toString()}`);
-  }
 
   return (
     <div className="card sticky top-24 p-5">
@@ -110,10 +119,6 @@ export default function Filter({ categories }: FilterProps) {
             className="input-field w-full text-sm"
           />
         </div>
-        {/* Tombol untuk menerapkan filter harga */}
-        <button onClick={handleApplyPriceFilter} className="btn w-full mt-4 text-sm">
-            Terapkan Harga
-        </button>
       </div>
     </div>
   );

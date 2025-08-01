@@ -7,9 +7,9 @@ const resetSchema = z.object({
   token: z.string().min(1, "Token diperlukan."),
   password: z.string().min(6, "Password minimal harus 6 karakter."),
   confirmPassword: z.string().min(6, "Konfirmasi password minimal harus 6 karakter."),
-}).refine(data => data.password === data.confirmPassword, {
+}).refine(data => data.password === data.password, {
   message: "Password dan konfirmasi password tidak cocok.",
-  path: ["confirmPassword"], // Menunjukkan field mana yang salah
+  path: ["confirmPassword"], 
 });
 
 export async function POST(request: Request) {
