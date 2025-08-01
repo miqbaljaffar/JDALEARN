@@ -71,7 +71,7 @@
 | Bahasa            | TypeScript                 |
 | Styling           | Tailwind CSS               |
 | ORM               | Prisma                     |
-| Database          | PostgreSQL (dapat diganti) |
+| Database          | PostgreSQL & Neon |
 | Autentikasi       | NextAuth.js                |
 | Validasi Form     | Zod + React Hook Form      |
 | Manajemen State   | Zustand (keranjang)        |
