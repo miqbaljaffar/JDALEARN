@@ -1,26 +1,22 @@
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { Metadata, ResolvingMetadata } from 'next';
+import { ClockIcon, UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 
-// --- AWAL PERUBAHAN ---
-// Definisikan tipe Props agar konsisten dengan halaman dinamis lainnya.
-// 'params' dan 'searchParams' harus dibungkus dengan Promise.
 type Props = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
-// --- AKHIR PERUBAHAN ---
 
 export async function generateMetadata(
   { params }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // --- AWAL PERUBAHAN ---
-  // Gunakan 'await' untuk mendapatkan nilai dari Promise 'params'
   const { slug } = await params;
-  // --- AKHIR PERUBAHAN ---
   const newsItem = await getNews(slug);
 
   if (!newsItem) {
@@ -67,22 +63,40 @@ const getNews = unstable_cache(
   { revalidate: 3600 }
 );
 
-// --- AWAL PERUBAHAN ---
-// Gunakan 'Props' yang sudah didefinisikan dan 'await' params di dalam komponen
+// Komponen untuk Tombol Berbagi Sosial
+function SocialShare({ title, url }: { title: string, url: string }) {
+    const encodedTitle = encodeURIComponent(title);
+    const encodedUrl = encodeURIComponent(url);
+
+    return (
+        <div className="flex items-center gap-3">
+            <p className="text-sm font-semibold text-gray-600">Bagikan:</p>
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-800 transition-colors">
+                <FaFacebook size={22} />
+            </a>
+            <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-500 transition-colors">
+                <FaTwitter size={22} />
+            </a>
+            <a href={`https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-green-500 transition-colors">
+                <FaWhatsapp size={22} />
+            </a>
+        </div>
+    )
+}
+
+
 export default async function NewsDetailPage({ params }: Props) {
   const { slug } = await params;
   const newsItem = await getNews(slug);
-// --- AKHIR PERUBAHAN ---
-
   const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const fullUrl = `${siteUrl}/news/${slug}`;
+
 
   const newsArticleSchema = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     "headline": newsItem.title,
-    "image": [
-      `${siteUrl}${newsItem.imageUrl}`
-     ],
+    "image": [`${siteUrl}${newsItem.imageUrl}`],
     "datePublished": new Date(newsItem.createdAt).toISOString(),
     "dateModified": new Date(newsItem.updatedAt).toISOString(),
     "author": [{
@@ -105,58 +119,72 @@ export default async function NewsDetailPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": `${siteUrl}`
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "News",
-        "item": `${siteUrl}/news`
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": newsItem.title,
-        "item": `${siteUrl}/news/${slug}`
-      }
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": `${siteUrl}`},
+      { "@type": "ListItem", "position": 2, "name": "News", "item": `${siteUrl}/news`},
+      { "@type": "ListItem", "position": 3, "name": newsItem.title, "item": fullUrl}
     ]
   };
 
   return (
-    <div className="card max-w-4xl mx-auto">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleSchema) }}/>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}/>
       
-      <h1 className="text-4xl font-bold mb-4">{newsItem.title}</h1>
+      <div className="mb-8">
+        <Link href="/news" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors font-semibold">
+          <ArrowLeftIcon className="w-5 h-5" />
+          Kembali ke Semua Berita
+        </Link>
+      </div>
       
-      <div className="flex items-center text-gray-500 mb-6">
-        <span>Oleh: {newsItem.author}</span>
-        <span className="mx-2">•</span>
-        <span>{new Date(newsItem.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-      </div>
+      <main className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="relative h-64 md:h-96 w-full">
+            <Image
+              src={newsItem.imageUrl}
+              alt={`Gambar untuk ${newsItem.title}`}
+              fill
+              className="object-cover"
+              priority
+            />
+        </div>
 
-      <div className="relative h-96 w-full rounded-lg overflow-hidden mb-8 shadow-lg">
-        <Image
-          src={newsItem.imageUrl}
-          alt={`Gambar untuk ${newsItem.title}`}
-          fill
-          className="object-cover"
-        />
-      </div>
+        <div className="p-6 md:p-10">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">{newsItem.title}</h1>
+            
+            <div className="md:grid md:grid-cols-4 md:gap-8">
+              {/* Kolom Info Penulis (di samping untuk desktop) */}
+              <aside className="md:col-span-1 mb-8 md:mb-0">
+                  <div className="sticky top-24 space-y-4">
+                      <div>
+                          <p className="text-sm font-semibold text-gray-500 mb-1">Penulis</p>
+                          <div className="flex items-center gap-2">
+                              <UserIcon className="w-5 h-5 text-gray-400"/>
+                              <span className="font-medium text-gray-800">{newsItem.author}</span>
+                          </div>
+                      </div>
+                       <div>
+                          <p className="text-sm font-semibold text-gray-500 mb-1">Tanggal</p>
+                          <div className="flex items-center gap-2">
+                              <ClockIcon className="w-5 h-5 text-gray-400"/>
+                              <span className="text-sm text-gray-600">{new Date(newsItem.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                          </div>
+                      </div>
+                      <div className="pt-4">
+                        <SocialShare title={newsItem.title} url={fullUrl} />
+                      </div>
+                  </div>
+              </aside>
 
-      <div className="prose lg:prose-xl max-w-none">
-        <p>{newsItem.content}</p>
-      </div>
+              {/* Konten Artikel */}
+              <article className="md:col-span-3">
+                  <div 
+                    className="prose prose-lg max-w-none prose-p:text-gray-700 prose-headings:text-gray-900"
+                    dangerouslySetInnerHTML={{ __html: newsItem.content || '' }}
+                  />
+              </article>
+            </div>
+        </div>
+      </main>
     </div>
   );
 }
