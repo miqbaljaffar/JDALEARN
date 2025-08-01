@@ -3,7 +3,7 @@ import ProductList from '@/app/ui/products/ProductList';
 import Pagination from '@/app/ui/pagination';
 import { Suspense } from 'react';
 import Search from '@/app/ui/search';
-import { TableSkeleton } from '@/app/ui/skeletons';
+import { TableSkeleton } from '@/app/ui/skeletons'; // Ganti dengan ProductGridSkeleton nanti
 import SortDropdown from '@/app/ui/products/SortDropdown'; 
 
 // Definisikan tipe untuk kejelasan
@@ -126,25 +126,60 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     await getProductsAndCategories(searchParams);
 
   return (
-    <div>
-      <div className="card">
-        <h1>Produk Kami</h1>
-        <p>Jelajahi koleksi pakaian berkualitas tinggi dari kami, siap untuk Anda miliki.</p>
-        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex-grow">
-            <Search placeholder="Cari produk..." />
-          </div>
-          <div className="w-full md:w-auto md:min-w-[200px]">
-            <SortDropdown /> 
-          </div>
-        </div>
+    <div className="space-y-8">
+      <div className="card text-center bg-gray-50 py-10">
+        <h1 className="text-4xl font-bold">Koleksi Pilihan Kami</h1>
+        <p className="text-lg text-gray-600 mt-2 max-w-2xl mx-auto">
+            Jelajahi koleksi pakaian berkualitas tinggi dari kami, siap untuk Anda miliki.
+        </p>
       </div>
+      
+      <div className="px-4 md:px-0">
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex-grow">
+                <Search placeholder="Cari produk..." />
+              </div>
+              <div className="w-full md:w-auto md:min-w-[200px]">
+                <SortDropdown /> 
+              </div>
+          </div>
 
-      <Suspense fallback={<TableSkeleton />}>
-        <ProductList initialProducts={products} categories={categories} />
-      </Suspense>
+          <Suspense fallback={<ProductGridSkeleton />}>
+            {/* Pastikan prop di sini adalah 'products', bukan 'initialProducts' */}
+            <ProductList products={products} categories={categories} />
+          </Suspense>
 
-      <Pagination currentPage={currentPage} totalPages={totalPages} />
+          <Pagination currentPage={currentPage} totalPages={totalPages} />
+      </div>
     </div>
   );
+}
+
+
+// Tambahkan Skeleton baru untuk Grid Produk
+function ProductGridSkeleton() {
+    return (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
+            {/* Filter Skeleton */}
+            <div className="card p-5 hidden lg:block">
+                <div className="h-6 w-1/3 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="space-y-3 mt-4">
+                    <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+            </div>
+            {/* Product List Skeleton */}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg shadow-md p-4">
+                        <div className="h-48 bg-gray-200 rounded-lg animate-pulse mb-4"></div>
+                        <div className="h-4 w-1/3 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-3"></div>
+                        <div className="h-6 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
 }

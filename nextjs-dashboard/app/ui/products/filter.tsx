@@ -1,29 +1,58 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
 
-// Interface untuk kategori
 interface Category {
   id: number;
   name: string;
 }
 
-// Interface untuk props komponen Filter
 interface FilterProps {
-  onFilterChange: (filters: { categoryIds: number[]; priceRange: [number, number] }) => void;
   categories: Category[];
 }
 
-export default function Filter({ onFilterChange, categories }: FilterProps) {
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]); // Rentang harga default
+export default function Filter({ categories }: FilterProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Efek untuk memanggil onFilterChange saat ada perubahan pada filter
+  // Inisialisasi state dari URL search params
+  const [selectedCategories, setSelectedCategories] = useState<number[]>(
+    searchParams.getAll('categoryId').map(Number)
+  );
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    Number(searchParams.get('minPrice')) || 0,
+    Number(searchParams.get('maxPrice')) || 5000000,
+  ]);
+  
+  // Gunakan debouncing agar tidak terlalu sering update URL saat user mengetik harga
+  const handleFilterChange = useDebouncedCallback(() => {
+    const params = new URLSearchParams(searchParams);
+    
+    // Reset page ke 1 setiap kali filter berubah
+    params.set('page', '1');
+
+    // Hapus parameter kategori lama dan set yang baru
+    params.delete('categoryId');
+    if (selectedCategories.length > 0) {
+      selectedCategories.forEach(id => params.append('categoryId', String(id)));
+    }
+
+    // Set parameter harga
+    params.set('minPrice', String(priceRange[0]));
+    params.set('maxPrice', String(priceRange[1]));
+
+    router.replace(`${pathname}?${params.toString()}`);
+  }, 500); // Tunggu 500ms setelah user berhenti mengubah filter
+
+  // Panggil handleFilterChange setiap kali state berubah
   useEffect(() => {
-    onFilterChange({ categoryIds: selectedCategories, priceRange });
-  }, [selectedCategories, priceRange, onFilterChange]);
+    handleFilterChange();
+  }, [selectedCategories, priceRange, handleFilterChange]);
 
-  // Handler untuk mengubah kategori yang dipilih
+
   const handleCategoryChange = (categoryId: number) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryId)
@@ -32,51 +61,53 @@ export default function Filter({ onFilterChange, categories }: FilterProps) {
     );
   };
 
-  // Handler untuk mengubah rentang harga
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, index: 0 | 1) => {
     const newPriceRange = [...priceRange] as [number, number];
     newPriceRange[index] = Number(e.target.value);
     setPriceRange(newPriceRange);
   };
-
+  
   return (
-    <div className="card">
-      <h3 style={{ marginBottom: '20px' }}>Filter Produk</h3>
-      
-      {/* Filter berdasarkan Kategori */}
-      <div>
-        <h4>Kategori</h4>
-        {categories.map((category) => (
-          <div key={category.id} style={{ marginTop: '10px' }}>
-            <input
-              type="checkbox"
-              id={`category-${category.id}`}
-              onChange={() => handleCategoryChange(category.id)}
-              style={{ marginRight: '10px' }}
-            />
-            <label htmlFor={`category-${category.id}`}>{category.name}</label>
-          </div>
-        ))}
+    <div className="card sticky top-24 p-5">
+      <h3 className="border-b pb-2 text-lg font-semibold">Filter</h3>
+
+      <div className="mb-6 mt-4">
+        <h4 className="mb-3 font-semibold">Kategori</h4>
+        <div className="space-y-2">
+          {categories.map((category) => (
+            <div key={category.id} className="flex items-center">
+              <input
+                type="checkbox"
+                id={`category-${category.id}`}
+                checked={selectedCategories.includes(category.id)}
+                onChange={() => handleCategoryChange(category.id)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor={`category-${category.id}`} className="ml-3 text-sm text-gray-600">
+                {category.name}
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Filter berdasarkan Harga */}
-      <div style={{ marginTop: '20px' }}>
-        <h4>Harga</h4>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
+      <div>
+        <h4 className="mb-3 font-semibold">Harga</h4>
+        <div className="flex items-center gap-2">
           <input
             type="number"
             value={priceRange[0]}
             onChange={(e) => handlePriceChange(e, 0)}
             placeholder="Min"
-            style={{ width: '100px', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            className="input-field w-full text-sm"
           />
-          <span>-</span>
+          <span className="text-gray-400">-</span>
           <input
             type="number"
             value={priceRange[1]}
             onChange={(e) => handlePriceChange(e, 1)}
             placeholder="Max"
-            style={{ width: '100px', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            className="input-field w-full text-sm"
           />
         </div>
       </div>
