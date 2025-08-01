@@ -140,11 +140,13 @@
    # akses di http://localhost:3000
    ```
 
-6. 5. **(Opsional) Login Admin Default**  
+6. **(Opsional) Login Admin Default**  
    Jika Anda menjalankan seed database, akun admin akan otomatis dibuat dengan detail berikut:
 
-   - Email: `admin@example.com`  
-   - Password: `admin123`
+  ```bash
+  Email: `admin@example.com`  
+  Password: `admin123`
+  ```
 
 ---
 
