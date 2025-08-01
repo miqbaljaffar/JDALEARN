@@ -3,8 +3,8 @@ import ProductList from '@/app/ui/products/ProductList';
 import Pagination from '@/app/ui/pagination';
 import { Suspense } from 'react';
 import Search from '@/app/ui/search';
-import { TableSkeleton } from '@/app/ui/skeletons'; // Ganti dengan ProductGridSkeleton nanti
-import SortDropdown from '@/app/ui/products/SortDropdown'; 
+import { TableSkeleton } from '@/app/ui/skeletons';
+import SortDropdown from '@/app/ui/products/SortDropdown';
 
 // Definisikan tipe untuk kejelasan
 interface Product {
@@ -13,8 +13,9 @@ interface Product {
   price: number;
   category: { name: string };
   imageUrl: string;
-  rating: number;
   stock: number;
+  averageRating: number;
+  salesCount: number;
 }
 
 interface Category {
@@ -53,7 +54,7 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
     ? parseFloat(searchParams.maxPrice as string)
     : undefined;
   
-  const sort = searchParams?.sort as string | undefined || 'newest'; 
+  const sort = searchParams?.sort as string | undefined || 'newest';
 
   const whereClause: any = {};
 
@@ -75,26 +76,30 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
       whereClause.price.lte = maxPrice;
   }
   
-  // Tentukan klausa orderBy
   const orderBy: any = {};
   if (sort === 'price-asc') {
     orderBy.price = 'asc';
   } else if (sort === 'price-desc') {
     orderBy.price = 'desc';
   } else if (sort === 'popularity') {
-      orderBy.reviews = {
-        _count: 'desc',
-      };
+    orderBy.reviews = {
+      _count: 'desc',
+    };
   } else {
     orderBy.createdAt = 'desc';
   }
-
 
   const [productsData, totalProducts, categories] = await Promise.all([
     prisma.product.findMany({
       where: whereClause,
       include: { 
         category: true,
+        reviews: {
+          select: { rating: true }
+        },
+        orderItems: {
+          select: { quantity: true }
+        },
         _count: { 
           select: { reviews: true },
         },
@@ -107,13 +112,29 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
     prisma.category.findMany(),
   ]);
 
-  const productsWithRating = productsData.map((p: any) => ({
-    ...p,
-    rating: 4.5, 
-  }));
+  // --- BAGIAN YANG DIPERBAIKI ---
+  // Olah data mentah menjadi data yang siap ditampilkan
+  const productsWithStats = productsData.map((p: any) => {
+    const totalReviews = p.reviews.length;
+    const averageRating =
+      totalReviews > 0
+        ? p.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / totalReviews
+        : 0;
+
+    const salesCount = p.orderItems.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0);
+    
+    // Hapus data relasi yang tidak perlu dikirim ke client
+    const { reviews, orderItems, ...product } = p;
+
+    return {
+      ...product,
+      averageRating: parseFloat(averageRating.toFixed(1)),
+      salesCount,
+    };
+  });
 
   return {
-    products: productsWithRating,
+    products: productsWithStats, // Kembalikan data yang sudah diolah
     totalPages: Math.ceil(totalProducts / limit),
     categories,
     currentPage,
@@ -145,7 +166,6 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </div>
 
           <Suspense fallback={<ProductGridSkeleton />}>
-            {/* Pastikan prop di sini adalah 'products', bukan 'initialProducts' */}
             <ProductList products={products} categories={categories} />
           </Suspense>
 
@@ -155,8 +175,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   );
 }
 
-
-// Tambahkan Skeleton baru untuk Grid Produk
+// Skeleton untuk Grid Produk
 function ProductGridSkeleton() {
     return (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">

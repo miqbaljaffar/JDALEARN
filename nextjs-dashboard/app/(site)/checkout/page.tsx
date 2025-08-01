@@ -9,7 +9,6 @@ import { useCartStore } from '@/app/store/cart';
 import { toast } from 'sonner';
 import { CreditCardIcon, MapPinIcon, ShoppingCartIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-// Data metode pembayaran dengan ikon
 const paymentMethods = [
   { id: 'mbanking', name: 'm-Banking (BCA VA)', account: '1234567890' },
   { id: 'dana', name: 'DANA', account: '08123456789' },
@@ -25,8 +24,8 @@ export default function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState('');
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0].id);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [addressOption, setAddressOption] = useState('saved'); // State untuk pilihan alamat
 
-  // Set alamat default saat sesi dimuat
   useEffect(() => {
     if (session?.user?.address) {
       setShippingAddress(session.user.address);
@@ -108,9 +107,7 @@ export default function CheckoutPage() {
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        {/* Kolom Kiri: Detail Pesanan & Alamat */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Card: Ringkasan Pesanan */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Ringkasan Pesanan</h2>
             <div className="space-y-4">
@@ -135,23 +132,57 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Card: Alamat Pengiriman */}
           <div className="bg-white rounded-xl shadow-md p-6">
              <h2 className="text-xl font-semibold mb-4 text-gray-700">Alamat Pengiriman</h2>
-              <div className="relative">
-                <MapPinIcon className="h-5 w-5 text-gray-400 absolute top-3.5 left-4" />
-                <textarea
-                  value={shippingAddress}
-                  onChange={(e) => setShippingAddress(e.target.value)}
-                  placeholder="Masukkan alamat lengkap Anda (Jalan, No. Rumah, Kelurahan, Kecamatan, Kota, Kode Pos)"
-                  className="input-field w-full pl-12"
-                  rows={4}
-                />
+             <div className="space-y-4">
+                <div className="flex items-center">
+                    <input
+                        type="radio"
+                        id="saved-address"
+                        name="addressOption"
+                        value="saved"
+                        checked={addressOption === 'saved'}
+                        onChange={() => setAddressOption('saved')}
+                        className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <label htmlFor="saved-address" className="ml-3 block text-sm font-medium text-gray-700">
+                        Gunakan Alamat Tersimpan
+                    </label>
+                </div>
+                {addressOption === 'saved' && (
+                    <div className="pl-7 text-gray-600">
+                        <p>{session?.user?.address || 'Tidak ada alamat tersimpan.'}</p>
+                    </div>
+                )}
+                <div className="flex items-center">
+                    <input
+                        type="radio"
+                        id="new-address"
+                        name="addressOption"
+                        value="new"
+                        checked={addressOption === 'new'}
+                        onChange={() => setAddressOption('new')}
+                        className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <label htmlFor="new-address" className="ml-3 block text-sm font-medium text-gray-700">
+                        Gunakan Alamat Baru
+                    </label>
+                </div>
+                {addressOption === 'new' && (
+                    <div className="pl-7"> 
+                        <textarea
+                          value={shippingAddress}
+                          onChange={(e) => setShippingAddress(e.target.value)}
+                          placeholder="Masukkan alamat lengkap Anda (Jalan, No. Rumah, Kelurahan, Kecamatan, Kota, Kode Pos)"
+                          className="input-field w-full" 
+                          rows={4}
+                        />
+                    </div>
+                )}
               </div>
           </div>
         </div>
 
-        {/* Kolom Kanan: Total & Pembayaran */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-md p-6 sticky top-24">
              <h2 className="text-xl font-semibold mb-4 text-gray-700">Metode Pembayaran</h2>

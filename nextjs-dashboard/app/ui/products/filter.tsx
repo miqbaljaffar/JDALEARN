@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useDebouncedCallback } from 'use-debounce';
 
 interface Category {
   id: number;
@@ -27,30 +26,19 @@ export default function Filter({ categories }: FilterProps) {
     Number(searchParams.get('maxPrice')) || 5000000,
   ]);
   
-  // Gunakan debouncing agar tidak terlalu sering update URL saat user mengetik harga
-  const handleFilterChange = useDebouncedCallback(() => {
-    const params = new URLSearchParams(searchParams);
-    
-    // Reset page ke 1 setiap kali filter berubah
+  // useEffect sekarang hanya akan berjalan ketika kategori berubah
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
     params.set('page', '1');
 
-    // Hapus parameter kategori lama dan set yang baru
     params.delete('categoryId');
     if (selectedCategories.length > 0) {
       selectedCategories.forEach(id => params.append('categoryId', String(id)));
     }
 
-    // Set parameter harga
-    params.set('minPrice', String(priceRange[0]));
-    params.set('maxPrice', String(priceRange[1]));
-
+    // Hanya update kategori secara otomatis
     router.replace(`${pathname}?${params.toString()}`);
-  }, 500); // Tunggu 500ms setelah user berhenti mengubah filter
-
-  // Panggil handleFilterChange setiap kali state berubah
-  useEffect(() => {
-    handleFilterChange();
-  }, [selectedCategories, priceRange, handleFilterChange]);
+  }, [selectedCategories, router, pathname, searchParams]);
 
 
   const handleCategoryChange = (categoryId: number) => {
@@ -63,10 +51,22 @@ export default function Filter({ categories }: FilterProps) {
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, index: 0 | 1) => {
     const newPriceRange = [...priceRange] as [number, number];
-    newPriceRange[index] = Number(e.target.value);
+    const value = e.target.value;
+    // Memungkinkan input kosong tanpa langsung diubah menjadi 0
+    newPriceRange[index] = value === '' ? 0 : Number(value);
     setPriceRange(newPriceRange);
   };
   
+  // Fungsi baru untuk menerapkan filter harga saat tombol diklik
+  const handleApplyPriceFilter = () => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', '1');
+    params.set('minPrice', String(priceRange[0]));
+    // Pastikan maxPrice tidak 0 jika inputnya kosong
+    params.set('maxPrice', String(priceRange[1] > 0 ? priceRange[1] : 5000000));
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+
   return (
     <div className="card sticky top-24 p-5">
       <h3 className="border-b pb-2 text-lg font-semibold">Filter</h3>
@@ -96,7 +96,7 @@ export default function Filter({ categories }: FilterProps) {
         <div className="flex items-center gap-2">
           <input
             type="number"
-            value={priceRange[0]}
+            value={priceRange[0] === 0 ? '' : priceRange[0]}
             onChange={(e) => handlePriceChange(e, 0)}
             placeholder="Min"
             className="input-field w-full text-sm"
@@ -104,12 +104,16 @@ export default function Filter({ categories }: FilterProps) {
           <span className="text-gray-400">-</span>
           <input
             type="number"
-            value={priceRange[1]}
+            value={priceRange[1] === 0 || priceRange[1] === 5000000 ? '' : priceRange[1]}
             onChange={(e) => handlePriceChange(e, 1)}
             placeholder="Max"
             className="input-field w-full text-sm"
           />
         </div>
+        {/* Tombol untuk menerapkan filter harga */}
+        <button onClick={handleApplyPriceFilter} className="btn w-full mt-4 text-sm">
+            Terapkan Harga
+        </button>
       </div>
     </div>
   );

@@ -244,12 +244,18 @@ export default function NewsManagementPage() {
             <div>
               <label className="block mb-2 font-medium">Gambar Berita</label>
               <input type="file" onChange={handleFileChange} accept="image/*" className="input-field" />
-              {formData.imageUrl && 
+              {(isEditing || selectedFile) && (
                 <div className="mt-2">
                     <p>Gambar saat ini:</p>
-                    <Image src={formData.imageUrl} alt="Gambar berita" width={100} height={100} className="rounded-md object-cover"/>
+                    <Image 
+                      src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} 
+                      alt="Gambar berita" 
+                      width={100} 
+                      height={100} 
+                      className="rounded-md object-cover"
+                    />
                 </div>
-              }
+              )}
             </div>
 
             <div className="flex gap-4">

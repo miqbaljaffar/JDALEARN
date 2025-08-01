@@ -13,7 +13,12 @@ const RegisterSchema = z.object({
   name: z.string().min(3, "Nama harus lebih dari 3 karakter."),
   email: z.string().email("Format email tidak valid."),
   password: z.string().min(6, "Password minimal harus 6 karakter."),
+  confirmPassword: z.string().min(6, "Konfirmasi password minimal harus 6 karakter."),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Password dan konfirmasi password tidak cocok.",
+  path: ["confirmPassword"], 
 });
+
 
 // Mengekstrak tipe data dari skema Zod
 type RegisterFormValues = z.infer<typeof RegisterSchema>;
@@ -101,6 +106,19 @@ export default function RegisterPage() {
             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
           />
           {errors.password && <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{errors.password.message}</p>}
+        </div>
+
+        {/* --- INPUT KONFIRMASI PASSWORD --- */}
+        <div style={{ marginBottom: '20px' }}>
+          <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Konfirmasi Password</label>
+          <input
+            {...register('confirmPassword')}
+            id="confirmPassword"
+            type="password"
+            disabled={isSubmitting}
+            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
+          />
+          {errors.confirmPassword && <p style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{errors.confirmPassword.message}</p>}
         </div>
 
         <button type="submit" className="btn" disabled={isSubmitting} style={{ width: '100%' }}>

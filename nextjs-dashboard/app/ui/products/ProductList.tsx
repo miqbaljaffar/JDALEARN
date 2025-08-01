@@ -4,8 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Filter from '@/app/ui/products/filter';
 import AddToCartButton from '@/app/ui/products/AddToCartButton';
+import StarRating from '@/app/ui/products/StarRating';
+import { ShoppingBagIcon } from '@heroicons/react/24/outline';
 
-// Interface untuk props (tidak berubah)
+
+// Interface untuk props
 interface Product {
   id: number;
   name: string;
@@ -13,6 +16,8 @@ interface Product {
   category: { name: string };
   imageUrl: string;
   stock: number;
+  averageRating: number;
+  salesCount: number;
 }
 
 interface Category {
@@ -21,18 +26,15 @@ interface Category {
 }
 
 interface ProductListProps {
-  products: Product[]; // Ganti nama dari initialProducts
+  products: Product[];
   categories: Category[];
 }
 
 export default function ProductList({ products, categories }: ProductListProps) {
-  // HAPUS: Semua state seperti [products, setProducts], isLoading, dll.
-  // HAPUS: Fungsi fetchProducts
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
       <aside>
-        {/* Filter sekarang akan menangani logikanya sendiri */}
         <Filter categories={categories} />
       </aside>
 
@@ -67,7 +69,17 @@ export default function ProductList({ products, categories }: ProductListProps) 
                   <h3 className="truncate text-base font-semibold text-gray-800 transition-colors duration-200 group-hover:text-blue-600">
                     {product.name}
                   </h3>
-                  <div className="price mt-2 mb-4 text-xl font-bold text-gray-900">
+                  
+                  {/* Tampilkan Rating dan Jumlah Terjual */}
+                  <div className="my-2 flex items-center justify-between text-sm text-gray-500">
+                    <StarRating rating={product.averageRating} />
+                    <div className="flex items-center gap-1">
+                      <ShoppingBagIcon className="h-4 w-4" />
+                      <span>{product.salesCount} terjual</span>
+                    </div>
+                  </div>
+
+                  <div className="price mt-auto mb-4 text-xl font-bold text-gray-900">
                     Rp{product.price.toLocaleString('id-ID')}
                   </div>
                   <div className="mt-auto">
