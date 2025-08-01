@@ -19,36 +19,22 @@ interface News {
   slug: string;
 }
 
-// --- AWAL PERUBAHAN ---
-// Fungsi untuk mengambil produk secara acak
+// Fungsi untuk mengambil produk secara acak (tetap sama)
 const getCachedFeaturedData = unstable_cache(
   async () => {
     const productsToTake = 9;
-
-    // 1. Hitung total produk
     const totalProducts = await prisma.product.count();
-    
-    // 2. Buat titik awal (skip) acak, pastikan tidak error jika produk < 9
     const skip = totalProducts > productsToTake 
       ? Math.floor(Math.random() * (totalProducts - productsToTake)) 
       : 0;
 
-    // 3. Ambil 9 produk dari titik acak tersebut
     const products = await prisma.product.findMany({
       take: productsToTake,
       skip: skip,
-      orderBy: { 
-        // Dibutuhkan order by agar 'skip' konsisten
-        id: 'asc' 
-      },
-      select: {
-        id: true,
-        name: true,
-        imageUrl: true
-      }
+      orderBy: { id: 'asc' },
+      select: { id: true, name: true, imageUrl: true }
     });
 
-    // Pengambilan data berita tetap sama
     const news = await prisma.news.findMany({
       take: 3,
       orderBy: { createdAt: 'desc' },
@@ -56,10 +42,9 @@ const getCachedFeaturedData = unstable_cache(
 
     return { products, news };
   },
-  ['featured_data_random_carousel'], // Kunci cache baru untuk data acak
-  { revalidate: 3600 } // Produk unggulan akan diacak ulang setiap 1 jam
+  ['featured_data_random_carousel_v2'],
+  { revalidate: 3600 }
 );
-// --- AKHIR PERUBAHAN ---
 
 
 export default async function Home() {
@@ -68,109 +53,90 @@ export default async function Home() {
   return (
     <div className="space-y-20">
       <section 
-        className="relative text-center py-24 md:py-32 rounded-lg overflow-hidden"
-        style={{
-          backgroundImage: 'url(/back.jpg)', 
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
+        className="relative text-center py-24 md:py-32 rounded-lg overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: 'url(/back.jpg)' }}
       >
-        <div 
-          className="absolute inset-0 bg-black opacity-50"
-          style={{ zIndex: 1 }}
-        ></div>
-
-        {/* Konten Hero Section */}
-        <div className="relative" style={{ zIndex: 2 }}>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Selamat Datang di Toko Kami</h1>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/30 z-10"></div>
+        <div className="relative z-20 px-4">
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-white shadow-lg">
+            Your Style, Your Story, Your Ztyle.
+          </h1>
           <p className="text-lg text-gray-200 max-w-3xl mx-auto mb-8">
-            Temukan koleksi fashion terbaru dan terbaik di sini, dibuat dengan bahan berkualitas dan desain modern.
+            Temukan koleksi fashion terkurasi yang mewakili dirimu. Dibuat dengan bahan premium dan desain yang tak lekang oleh waktu.
           </p>
-          <Link href="/products" className="btn bg-white text-gray-800 hover:bg-gray-200">
-            Jelajahi Semua Produk
+          <Link href="/products" className="btn bg-white text-gray-900 hover:bg-gray-200 shadow-md transform hover:scale-105 transition-transform duration-300">
+            Jelajahi Koleksi Terbaru
           </Link>
         </div>
       </section>
 
-
-      {/* Produk Unggulan */}
       <section>
-        <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">Produk Unggulan</h2>
+        <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-800">Produk Unggulan Pilihan Kami</h2>
+            <p className="text-md text-gray-500 mt-2">Setiap item dipilih untuk melengkapi gayamu.</p>
+        </div>
         <div className="mx-auto max-w-6xl px-10">
            <ProductCarousel products={products} />
         </div>
         <div className="text-center mt-12">
-          <Link href="/products" className="btn border-2 border-blue-500 bg-transparent text-blue-500 hover:bg-blue-50">
-            Lihat Koleksi Lengkap
+          <Link href="/products" className="btn border-2 border-blue-600 bg-transparent text-blue-600 hover:bg-blue-50">
+            Lihat Semua Koleksi
           </Link>
         </div>
       </section>
 
-      {/* Why Choose Us Section - Versi Baru yang Lebih Menarik */}
       <section className="bg-gray-50 rounded-lg p-8 md:p-12">
         <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">Kenapa Ztyle Pilihan Tepat?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          {/* Keunggulan 1: Koleksi Terkurasi */}
-          <div className="text-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+          <div className="text-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
             <div className="flex items-center justify-center mx-auto mb-4 w-16 h-16 bg-blue-100 text-blue-600 rounded-full">
-              {/* Ganti dengan ikon yang sesuai, misalnya SparklesIcon */}
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.455L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.455l.398-1.178.398 1.178a3.375 3.375 0 002.455 2.455l1.178.398-1.178.398a3.375 3.375 0 00-2.455 2.455z" />
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.455L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.455l.398-1.178.398 1.178a3.375 3.375 0 002.455 2.455l1.178.398-1.178.398a3.375 3.375 0 00-2.455 2.455z" /></svg>
             </div>
             <h3 className="text-xl font-semibold mb-2">Koleksi Terkurasi</h3>
-            <p className="text-gray-600">Setiap produk dipilih dengan cermat untuk memastikan Anda mendapatkan gaya yang unik, modern, dan berkualitas, bukan sekadar produk pasaran.</p>
+            <p className="text-gray-600">Setiap produk dipilih dengan cermat untuk memastikan Anda mendapatkan gaya yang unik, modern, dan berkualitas.</p>
           </div>
           
-          {/* Keunggulan 2: Kualitas Premium */}
-          <div className="text-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+          <div className="text-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
             <div className="flex items-center justify-center mx-auto mb-4 w-16 h-16 bg-green-100 text-green-600 rounded-full">
-              {/* Ganti dengan ikon yang sesuai, misalnya ShieldCheckIcon */}
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <h3 className="text-xl font-semibold mb-2">Kualitas Tanpa Kompromi</h3>
-            <p className="text-gray-600">Dari pemilihan bahan terbaik hingga detail jahitan yang presisi, kami menjamin setiap produk yang Anda terima adalah yang terbaik.</p>
+            <p className="text-gray-600">Dari bahan terbaik hingga jahitan presisi, kami menjamin setiap produk yang Anda terima adalah yang terbaik.</p>
           </div>
 
-          {/* Keunggulan 3: Pengiriman Cepat */}
-          <div className="text-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+          <div className="text-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
             <div className="flex items-center justify-center mx-auto mb-4 w-16 h-16 bg-purple-100 text-purple-600 rounded-full">
-               {/* Ganti dengan ikon yang sesuai, misalnya TruckIcon */}
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8a1 1 0 001-1z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16h2a1 1 0 001-1V7a1 1 0 00-1-1h-2a1 1 0 00-1 1v2" />
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V14.25m-17.25 4.5v-1.875a3.375 3.375 0 013.375-3.375h1.5a1.125 1.125 0 011.125 1.125v-1.5a3.375 3.375 0 013.375-3.375H9.75" /></svg>
             </div>
             <h3 className="text-xl font-semibold mb-2">Pengiriman Cepat & Terpercaya</h3>
-            <p className="text-gray-600">Kami tahu Anda tidak sabar. Pesanan Anda diproses super cepat, dikemas dengan aman, dan dikirim hingga sampai ke tangan Anda.</p>
+            <p className="text-gray-600">Pesanan Anda diproses super cepat, dikemas aman, dan dikirim hingga sampai ke tangan Anda.</p>
           </div>
 
         </div>
       </section>
 
-      {/* Fashion News Section */}
       <section>
-        <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">Berita Fashion Terkini</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">Wawasan Fashion Terkini</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {news.map((newsItem: News) => (
              <Link key={newsItem.id} href={`/news/${newsItem.slug}`} className="group block">
-              <div className="product-card overflow-hidden">
-                <div className="relative h-56 w-full">
+              <div className="product-card h-full">
+                <div className="relative h-56 w-full overflow-hidden">
                   <Image
                     src={newsItem.imageUrl}
                     alt={newsItem.title}
                     fill
                     sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
-                <div className="p-4">
+                <div className="p-5 flex flex-col">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">{newsItem.title}</h3>
-                  <p className="text-sm text-gray-600">{newsItem.excerpt}</p>
+                  <p className="text-sm text-gray-600 flex-grow">{newsItem.excerpt}</p>
+                   <span className="text-sm font-semibold text-blue-600 mt-4 self-start group-hover:underline">
+                    Baca Selengkapnya →
+                  </span>
                 </div>
               </div>
             </Link>
