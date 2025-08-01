@@ -33,14 +33,6 @@ export default function CheckoutPage() {
     }
   }, [session]);
 
-  // Arahkan jika belum login
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      toast.error("Anda harus login untuk melanjutkan ke checkout.");
-      router.push('/login');
-    }
-  }, [status, router]);
-
   const handlePlaceOrder = async () => {
     if (!shippingAddress.trim()) {
       toast.error('Alamat pengiriman wajib diisi.');

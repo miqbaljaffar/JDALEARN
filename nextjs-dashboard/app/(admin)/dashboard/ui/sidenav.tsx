@@ -1,4 +1,4 @@
-'use client'; // 1. Tambahkan ini untuk menjadikannya Client Component
+'use client'; 
 
 import Link from 'next/link';
 import NavLinks from '@/app/(admin)/dashboard/ui/nav-links';
@@ -11,7 +11,7 @@ export default function SideNav() {
     <div className="flex h-full flex-col px-3 py-4 md:px-2">
       <Link
         className="mb-2 flex h-20 items-end justify-start rounded-md bg-blue-600 p-4 md:h-40"
-        href="/"
+        href="/dashboard"
       >
         <div className="w-32 text-white md:w-40">
            <Image src="/Logo.png" alt="Ztyle Logo" width={120} height={45} priority />
@@ -21,7 +21,6 @@ export default function SideNav() {
         <NavLinks />
         <div className="hidden h-auto w-full grow rounded-md bg-gray-50 md:block"></div>
         
-        {/* 3. Hapus <form> dan tambahkan onClick */}
         <button 
           onClick={() => signOut({ callbackUrl: '/' })}
           className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3"
