@@ -1,7 +1,3 @@
-Berikut adalah versi **README** yang telah diperbaiki, disusun ulang agar lebih rapi, konsisten, dan profesional:
-
----
-
 # 🛍️ Ztyle - Modern E-Commerce Platform
 
 **Ztyle** adalah platform e-commerce modern yang dibangun menggunakan **Next.js**, dirancang untuk memberikan pengalaman berbelanja yang intuitif dan mulus. Platform ini dilengkapi dengan fitur lengkap untuk **pelanggan** maupun **admin**, termasuk katalog produk, checkout, manajemen pesanan, sistem ulasan, hingga CMS berita fashion.
@@ -204,13 +200,3 @@ Kontribusi sangat kami hargai!
 ## 📄 Lisensi
 
 Proyek ini menggunakan **Lisensi MIT**. Silakan lihat file [LICENSE](./LICENSE) untuk informasi lebih lanjut.
-
----
-
-Jika kamu ingin, saya juga bisa bantu:
-
-* Menambahkan badge seperti `build`, `license`, `stars`, dll.
-* Membuat dokumentasi API Swagger/OpenAPI.
-* Atau membuat dokumentasi deployment (misalnya ke Vercel).
-
-Butuh? Tinggal bilang saja.
