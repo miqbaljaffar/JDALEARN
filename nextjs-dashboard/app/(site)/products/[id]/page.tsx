@@ -158,7 +158,11 @@ export default async function ProductDetail({ params, searchParams }: Props) {
             <div className="mb-4">
               <StarRating rating={averageRating} count={totalReviews} />
             </div>
-            <p className="text-lg text-gray-600 mb-6">{product.description}</p>
+            <div 
+              className="text-lg text-gray-600 mb-6 prose"
+              dangerouslySetInnerHTML={{ __html: product.description || '' }}
+            />
+
             <div className="text-4xl font-bold text-gray-900 mb-8">
               Rp{product.price.toLocaleString('id-ID')}
             </div>
@@ -208,10 +212,8 @@ export default async function ProductDetail({ params, searchParams }: Props) {
         <h2 className="text-2xl font-bold mb-6">Ulasan Pelanggan ({totalReviews})</h2>
         <div className="space-y-6">
           {totalReviews > 0 ? (
-            // --- AWAL PERBAIKAN ---
             // Berikan tipe eksplisit 'Review' pada parameter review
             product.reviews.map((review: Review) => (
-            // --- AKHIR PERBAIKAN ---
               <div key={review.id} className="border-b pb-4 last:border-b-0">
                 <div className="flex items-center mb-2">
                   <p className="font-semibold text-lg mr-4">{review.user.name}</p>

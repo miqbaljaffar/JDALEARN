@@ -7,6 +7,13 @@ import Pagination from '@/app/ui/pagination';
 import { TableSkeleton } from '@/app/ui/skeletons';
 import { toast } from 'sonner';
 
+// Import komponen dan hook dari TipTap
+import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import { Toolbar } from '@/app/(admin)/dashboard/ui/Toolbar';
+
 // Interface untuk data Product dan Category
 interface Product {
   id: number;
@@ -50,6 +57,35 @@ function ProductsManagementComponent() {
     imageUrl: '/products/default.jpg',
     description: '',
   });
+
+  // Inisialisasi editor TipTap
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Placeholder.configure({
+        placeholder: 'Tulis deskripsi lengkap produk di sini...',
+      }),
+    ],
+    content: formData.description,
+    onUpdate: ({ editor }) => {
+      setFormData(prev => ({ ...prev, description: editor.getHTML() }));
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl focus:outline-none w-full input-field min-h-[200px] p-2',
+      },
+    },
+    // Pastikan ini ditambahkan agar editor tidak langsung dirender di server
+    immediatelyRender: false,
+  });
+
+  // Sinkronisasi konten editor saat formData.description berubah
+  useEffect(() => {
+    if (editor && editor.getHTML() !== formData.description) {
+      editor.commands.setContent(formData.description);
+    }
+  }, [formData.description, editor]);
 
   // useEffect sekarang bergantung pada searchParams (perubahan URL)
   useEffect(() => {
@@ -106,8 +142,8 @@ function ProductsManagementComponent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price || !formData.categoryId) {
-      toast.error("Nama Produk, Harga, dan Kategori wajib diisi.");
+    if (!formData.name || !formData.price || !formData.categoryId || !editor?.getText()) {
+      toast.error("Nama Produk, Harga, Kategori, dan Deskripsi wajib diisi.");
       return;
     }
     setUploading(true);
@@ -209,6 +245,7 @@ function ProductsManagementComponent() {
     setIsEditing(null);
     setSelectedFile(null);
     setFormData({ name: '', price: '', categoryId: '', stock: '0', imageUrl: '/products/default.jpg', description: '' });
+    editor?.commands.clearContent();
   };
 
   if (isLoading && products.length === 0) {
@@ -233,6 +270,7 @@ function ProductsManagementComponent() {
         <div className="card">
           <h2>{isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}</h2>
           <form onSubmit={handleSubmit}>
+            {/* Input lainnya tetap sama */}
             <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Nama Produk" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Harga" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
             <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} placeholder="Jumlah Stok" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
@@ -247,7 +285,13 @@ function ProductsManagementComponent() {
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
-            <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Deskripsi Produk" style={{ width: '100%', padding: '10px', marginBottom: '10px', minHeight: '80px' }} />
+            <div>
+              <label className="block mb-2 font-medium">Deskripsi Produk</label>
+              <div className="border border-gray-200 rounded-lg">
+                <Toolbar editor={editor} />
+                <EditorContent editor={editor} />
+              </div>
+            </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Gambar Produk</label>
               <input type="file" onChange={handleFileChange} accept="image/*" style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px' }} />
