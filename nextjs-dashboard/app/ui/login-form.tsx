@@ -7,7 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react'; // Impor useState
+import { useState } from 'react';
+import { toast } from 'sonner'; 
 
 // Skema validasi dengan Zod
 const LoginSchema = z.object({
@@ -20,7 +21,7 @@ type LoginFormValues = z.infer<typeof LoginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
-  const [loginError, setLoginError] = useState<string | null>(null); // State untuk error
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -32,38 +33,35 @@ export default function LoginForm() {
 
   // Fungsi onSubmit yang akan dipanggil oleh handleSubmit
   const onSubmit = async (data: LoginFormValues) => {
-    setLoginError(null); // Reset error setiap kali login
+    setLoginError(null);
     try {
-      // 1. Lakukan proses login tanpa redirect otomatis
       const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
         password: data.password,
       });
 
-      // 2. Jika login gagal, tampilkan pesan error
       if (result?.error) {
-        // Tangani berbagai jenis error dari NextAuth
         if (result.error === 'CredentialsSignin') {
           setLoginError('Email atau password yang Anda masukkan salah.');
         } else {
           setLoginError(result.error);
         }
-        return; // Hentikan proses
+        return;
       }
       
-      // 3. Jika login berhasil, ambil data profil untuk cek role
+      // 2. Tampilkan notifikasi sukses
+      toast.success('Login berhasil! Selamat datang kembali.');
+
       const res = await fetch('/api/user/profile');
       const user = await res.json();
 
-      // 4. Arahkan berdasarkan role
       if (user && user.role === 'ADMIN') {
         router.push('/dashboard');
       } else {
         router.push('/');
       }
 
-      // Refresh halaman untuk memastikan semua state (seperti header) terupdate
       router.refresh();
 
     } catch (e) {
@@ -121,7 +119,6 @@ export default function LoginForm() {
         </div>
       </div>
       
-      {/* Tampilkan pesan error di sini */}
       {loginError && (
         <div className="mt-4 text-center">
           <p className="text-sm text-red-500">{loginError}</p>

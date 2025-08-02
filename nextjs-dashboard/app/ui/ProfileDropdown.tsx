@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
 import { useSession, signOut } from 'next-auth/react'
+import { toast } from 'sonner'; 
 
 export default function ProfileDropdown() {
   const { data: session, status } = useSession();
@@ -26,6 +27,13 @@ export default function ProfileDropdown() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [dropdownRef])
+
+  // 2. Buat fungsi handle untuk logout
+  const handleSignOut = () => {
+    toast.success('Anda telah berhasil logout.');
+    signOut({ callbackUrl: '/' });
+    setIsOpen(false);
+  };
 
   if (status === "loading") {
     return (
@@ -63,10 +71,8 @@ export default function ProfileDropdown() {
                   </Link>
                 </>
               )}
-              <a onClick={() => {
-                signOut({ callbackUrl: '/' });
-                setIsOpen(false);
-              }} style={{ cursor: 'pointer' }}>
+              {/* 3. Panggil fungsi handleSignOut saat link diklik */}
+              <a onClick={handleSignOut} style={{ cursor: 'pointer' }}>
                 Logout
               </a>
             </>

@@ -5,8 +5,16 @@ import NavLinks from '@/app/(admin)/dashboard/ui/nav-links';
 import { PowerIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
+import { toast } from 'sonner'; 
 
 export default function SideNav() {
+  
+  // 2. Buat fungsi handle untuk logout
+  const handleSignOut = () => {
+    toast.success('Anda telah berhasil logout.');
+    signOut({ callbackUrl: '/' });
+  };
+
   return (
     <div className="flex h-full flex-col px-3 py-4 md:px-2">
       <Link
@@ -21,8 +29,9 @@ export default function SideNav() {
         <NavLinks />
         <div className="hidden h-auto w-full grow rounded-md bg-gray-50 md:block"></div>
         
+        {/* 3. Panggil fungsi handleSignOut saat tombol diklik */}
         <button 
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={handleSignOut}
           className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3"
         >
           <PowerIcon className="w-6" />
