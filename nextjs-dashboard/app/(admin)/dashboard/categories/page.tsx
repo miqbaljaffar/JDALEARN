@@ -2,6 +2,8 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { toast } from 'sonner';
+import { TagIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+
 
 interface Category {
   id: number;
@@ -19,15 +21,9 @@ export default function CategoriesManagementPage() {
     try {
       const res = await fetch('/api/categories');
       const data = await res.json();
-      // Pastikan untuk mengambil array 'categories' dari objek response
-      if (data && Array.isArray(data.categories)) {
-        setCategories(data.categories);
-      } else {
-        // Fallback jika format data tidak sesuai dugaan
-        setCategories([]);
-      }
+      setCategories(data?.categories || []);
     } catch (error) {
-      console.error("Gagal mengambil kategori:", error);
+      toast.error("Gagal mengambil data kategori.");
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +44,7 @@ export default function CategoriesManagementPage() {
 
     try {
       const res = await fetch(url, {
-        method: method,
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: categoryName }),
       });
@@ -59,7 +55,6 @@ export default function CategoriesManagementPage() {
       setEditingCategoryId(null);
       fetchCategories();
     } catch (error) {
-      console.error(error);
       toast.error('Gagal menyimpan kategori.');
     }
   };
@@ -68,7 +63,7 @@ export default function CategoriesManagementPage() {
     setEditingCategoryId(category.id);
     setCategoryName(category.name);
   };
-
+  
   const handleDelete = async (id: number) => {
     toast('Apakah Anda yakin ingin menghapus kategori ini?', {
       description: 'Aksi ini bisa gagal jika ada produk yang terkait dengan kategori ini.',
@@ -95,63 +90,95 @@ export default function CategoriesManagementPage() {
       },
     });
   };
-
+  
   if (isLoading) {
     return <p>Memuat data kategori...</p>;
   }
 
   return (
-    <div className="w-full">
-      <div className="card">
-        <h1>Manajemen Kategori</h1>
-        <p>Tambah, edit, atau hapus kategori produk.</p>
+    <div className="space-y-8">
+       <div>
+        <h1 className="text-3xl font-bold text-gray-800">Manajemen Kategori</h1>
+        <p className="text-gray-500 mt-1">Tambah, edit, atau hapus kategori produk.</p>
       </div>
 
-      <div className="card">
-        <h2>{editingCategoryId ? 'Edit Kategori' : 'Tambah Kategori Baru'}</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <input 
-            value={categoryName}
-            onChange={(e) => setCategoryName(e.target.value)}
-            placeholder="Nama Kategori"
-            required
-            style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
-          />
-          <button type="submit" className="btn">
-            {editingCategoryId ? 'Update' : 'Simpan'}
-          </button>
-          {editingCategoryId && (
-            <button type="button" onClick={() => { setEditingCategoryId(null); setCategoryName(''); }} className="btn" style={{background: '#555'}}>
-              Batal
+      <div className="bg-white p-6 rounded-2xl shadow-lg">
+        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-grow w-full">
+            <TagIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
+            <input 
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              placeholder={editingCategoryId ? "Edit nama kategori..." : "Nama kategori baru..."}
+              required
+              className="input-field pl-10"
+            />
+          </div>
+          <div className="flex gap-4 w-full md:w-auto">
+            {editingCategoryId && (
+              <button type="button" onClick={() => { setEditingCategoryId(null); setCategoryName(''); }} className="btn bg-gray-200 text-gray-800 hover:bg-gray-300 w-full justify-center">
+                Batal
+              </button>
+            )}
+            <button type="submit" className="btn w-full justify-center">
+              <PlusIcon className="w-5 h-5 md:hidden" />
+              <span className="hidden md:inline">{editingCategoryId ? 'Update Kategori' : 'Simpan Kategori'}</span>
             </button>
-          )}
+          </div>
         </form>
       </div>
       
-      <div className="card">
-        <h3>Daftar Kategori</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #ddd' }}>
-              <th style={{ padding: '12px', textAlign: 'left' }}>ID</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Nama Kategori</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((cat) => (
-              <tr key={cat.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px' }}>{cat.id}</td>
-                <td style={{ padding: '12px' }}>{cat.name}</td>
-                <td style={{ padding: '12px', display: 'flex', gap: '8px' }}>
-                  <button onClick={() => handleEdit(cat)} className="btn" style={{ padding: '6px 12px', fontSize: '12px' }}>Edit</button>
-                  <button onClick={() => handleDelete(cat.id)} className="btn" style={{ background: '#e53e3e', padding: '6px 12px', fontSize: '12px' }}>Hapus</button>
-                </td>
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm whitespace-nowrap">
+            <thead className="tracking-wider border-b-2 border-gray-200 bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">ID</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">Nama Kategori</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600 text-right">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-blue-600">#{cat.id}</td>
+                  <td className="px-6 py-4 text-gray-800">{cat.name}</td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleEdit(cat)} className="p-2 rounded-full hover:bg-blue-100" title="Edit Kategori">
+                        <PencilIcon className="w-5 h-5 text-blue-600"/>
+                      </button>
+                      <button onClick={() => handleDelete(cat.id)} className="p-2 rounded-full hover:bg-red-100" title="Hapus Kategori">
+                        <TrashIcon className="w-5 h-5 text-red-500"/>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+           {categories.length === 0 && !isLoading && (
+              <div className="text-center p-8 text-gray-500">
+                  <p>Belum ada kategori yang ditambahkan.</p>
+              </div>
+           )}
+        </div>
       </div>
+      <style jsx>{`
+        .input-field {
+            display: block; width: 100%; border-radius: 0.5rem;
+            border: 1px solid #D1D5DB; background-color: #F9FAFB;
+            padding: 0.75rem; font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-field:focus {
+            outline: none; border-color: #3B82F6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        .input-field.pl-10 {
+            padding-left: 2.5rem;
+        }
+      `}</style>
     </div>
   );
 }

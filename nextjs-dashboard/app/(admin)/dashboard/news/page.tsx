@@ -9,6 +9,7 @@ import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Toolbar } from '@/app/(admin)/dashboard/ui/Toolbar';
 import { toast } from 'sonner';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 // Interface untuk data Berita
 interface News {
@@ -19,6 +20,32 @@ interface News {
   imageUrl: string;
   author: string;
   slug: string;
+}
+
+// Komponen Card Berita yang baru dan responsif
+function NewsCard({ item, onEdit, onDelete }: { item: News, onEdit: (item: News) => void, onDelete: (id: number) => void }) {
+    return (
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
+            <div className="relative h-48 w-full overflow-hidden">
+                <Image src={item.imageUrl} alt={item.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+            </div>
+            <div className="p-5">
+                <h3 className="font-bold text-lg text-gray-800 mb-2 truncate group-hover:text-blue-600 transition-colors">{item.title}</h3>
+                <p className="text-sm text-gray-500 mb-4 h-10 overflow-hidden">{item.excerpt}</p>
+                <div className="flex justify-between items-center">
+                    <p className="text-xs font-medium text-gray-500">Oleh: <span className="text-gray-900">{item.author}</span></p>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => onEdit(item)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                            <PencilIcon className="w-5 h-5 text-gray-600"/>
+                        </button>
+                        <button onClick={() => onDelete(item.id)} className="p-2 rounded-full hover:bg-red-100 transition-colors">
+                            <TrashIcon className="w-5 h-5 text-red-500"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 }
 
 export default function NewsManagementPage() {
@@ -37,7 +64,7 @@ export default function NewsManagementPage() {
     slug: '',
   });
 
-    // Inisialisasi editor TipTap
+  // Inisialisasi editor TipTap
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -52,14 +79,13 @@ export default function NewsManagementPage() {
     },
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl focus:outline-none w-full input-field min-h-[200px] p-2',
+        class: 'prose max-w-none focus:outline-none w-full input-field min-h-[150px] p-2',
       },
     },
-    immediatelyRender: false, // <-- TAMBAHKAN BARIS INI
+    immediatelyRender: false,
   });
 
   useEffect(() => {
-    // Pastikan editor ada dan kontennya berbeda sebelum di-set
     if (editor && editor.getHTML() !== formData.content) {
       editor.commands.setContent(formData.content);
     }
@@ -71,7 +97,6 @@ export default function NewsManagementPage() {
     try {
       const res = await fetch('/api/news');
       const data = await res.json();
-      // Pastikan untuk mengambil array 'news' dari objek response
       if (data && Array.isArray(data.news)) {
         setNews(data.news);
       } else {
@@ -99,7 +124,6 @@ export default function NewsManagementPage() {
   // Handler untuk men-submit form
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Validasi konten dari editor
     if (!formData.title || !formData.excerpt || !editor?.getText() || !formData.author) {
       toast.error("Judul, excerpt, konten, dan penulis wajib diisi.");
       return;
@@ -107,7 +131,6 @@ export default function NewsManagementPage() {
     setUploading(true);
     let imageUrl = formData.imageUrl;
 
-    // Proses upload gambar jika ada file yang dipilih
     if (selectedFile) {
       const fileFormData = new FormData();
       fileFormData.append('file', selectedFile);
@@ -130,11 +153,8 @@ export default function NewsManagementPage() {
       }
     }
 
-    // Buat slug dari judul
     const slug = formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-
     const newsData = { ...formData, imageUrl, slug, content: editor.getHTML() };
-
     const url = isEditing ? `/api/news/${isEditing}` : '/api/news';
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -178,7 +198,7 @@ export default function NewsManagementPage() {
         },
         cancel: {
             label: 'Batal',
-            onClick: () => {} // <-- INI PERBAIKANNYA
+            onClick: () => {}
         }
     })
   };
@@ -186,17 +206,17 @@ export default function NewsManagementPage() {
   // Handler untuk mode edit
   const handleEdit = (item: News) => {
     setIsEditing(item.id);
-    const content = item.content || '';
     setFormData({
       title: item.title,
       excerpt: item.excerpt,
-      content: content,
+      content: item.content || '',
       author: item.author,
       imageUrl: item.imageUrl,
       slug: item.slug
     });
     setShowForm(true);
     setSelectedFile(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   // Fungsi untuk mereset form
@@ -208,102 +228,90 @@ export default function NewsManagementPage() {
     editor?.commands.clearContent();
   };
 
-  if (isLoading) {
-    return <p>Memuat data berita...</p>;
-  }
+  if (isLoading) return <p>Memuat data berita...</p>;
 
   return (
-    <div>
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1>Manajemen Berita</h1>
-            <p>Kelola semua berita dan artikel di website Anda.</p>
-          </div>
-          <button className="btn" onClick={() => { setShowForm(!showForm); if (isEditing) resetForm(); }}>
-            {showForm && !isEditing ? 'Batal' : 'Tambah Berita Baru'}
-          </button>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Manajemen Berita</h1>
+          <p className="text-gray-500 mt-1">Kelola semua berita dan artikel di website Anda.</p>
         </div>
+        <button className="btn flex items-center gap-2" onClick={() => { setShowForm(!showForm); if (isEditing) resetForm(); }}>
+          <PlusIcon className="w-5 h-5" />
+          <span>{showForm && !isEditing ? 'Batal' : 'Tambah Berita'}</span>
+        </button>
       </div>
 
       {showForm && (
-        <div className="card">
-          <h2>{isEditing ? 'Edit Berita' : 'Tambah Berita Baru'}</h2>
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            <input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Judul Berita" required className="input-field" />
-            <input value={formData.excerpt} onChange={(e) => setFormData({...formData, excerpt: e.target.value})} placeholder="Insight Singkat (Excerpt)" required className="input-field" />
-            
-            {/* Toolbar dan Editor Content dari TipTap */}
-            <div className="border border-gray-200 rounded-lg">
-              <Toolbar editor={editor} />
-              <EditorContent editor={editor} />
+        <div className="bg-white p-8 rounded-2xl shadow-lg animate-fade-in">
+          <h2 className="text-2xl font-semibold mb-6">{isEditing ? 'Edit Berita' : 'Tambah Berita Baru'}</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Judul Berita" required className="input-field" />
+              <input value={formData.author} onChange={(e) => setFormData({...formData, author: e.target.value})} placeholder="Nama Penulis" required className="input-field" />
             </div>
-
-            <input value={formData.author} onChange={(e) => setFormData({...formData, author: e.target.value})} placeholder="Nama Penulis" required className="input-field" />
+            <textarea value={formData.excerpt} onChange={(e) => setFormData({...formData, excerpt: e.target.value})} placeholder="Insight Singkat (Excerpt)" required className="input-field" rows={3}></textarea>
             
             <div>
-              <label className="block mb-2 font-medium">Gambar Berita</label>
-              <input type="file" onChange={handleFileChange} accept="image/*" className="input-field" />
-              {(isEditing || selectedFile) && (
-                <div className="mt-2">
-                    <p>Gambar saat ini:</p>
-                    <Image 
-                      src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} 
-                      alt="Gambar berita" 
-                      width={100} 
-                      height={100} 
-                      className="rounded-md object-cover"
-                    />
-                </div>
-              )}
+              <label className="block mb-2 font-medium text-gray-700">Konten Lengkap</label>
+              <div className="border border-gray-300 rounded-lg">
+                <Toolbar editor={editor} />
+                <EditorContent editor={editor} />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Gambar Berita</label>
+              <div className="flex items-center gap-4">
+                {(formData.imageUrl || selectedFile) && (
+                  <Image src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} alt="Preview" width={80} height={80} className="rounded-lg object-cover" />
+                )}
+                <input type="file" onChange={handleFileChange} accept="image/*" className="input-field flex-1" />
+              </div>
             </div>
 
-            <div className="flex gap-4">
-                <button type="submit" className="btn" disabled={uploading}>
-                  {uploading ? 'Menyimpan...' : (isEditing ? 'Update' : 'Simpan')}
-                </button>
-                {isEditing && <button type="button" onClick={resetForm} className="btn" style={{background: '#555'}}>Batal</button>}
+            <div className="flex justify-end gap-4 pt-4">
+              <button type="button" onClick={resetForm} className="btn bg-gray-200 text-gray-800 hover:bg-gray-300">Batal</button>
+              <button type="submit" className="btn" disabled={uploading}>
+                {uploading ? 'Menyimpan...' : (isEditing ? 'Update Berita' : 'Simpan Berita')}
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="card">
-        <h3>Daftar Berita</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full mt-4">
-            <thead>
-              <tr className="border-b">
-                <th className="p-3 text-left">Gambar</th>
-                <th className="p-3 text-left">Judul</th>
-                <th className="p-3 text-left">Author</th>
-                <th className="p-3 text-left">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {news.map((item) => (
-                <tr key={item.id} className="border-b">
-                  <td className="p-3">
-                    <Image src={item.imageUrl} alt={item.title} width={60} height={60} className="rounded-md object-cover"/>
-                  </td>
-                  <td className="p-3">{item.title}</td>
-                  <td className="p-3">{item.author}</td>
-                  <td className="p-3">
-                    <button onClick={() => handleEdit(item)} className="btn text-xs p-2 mr-2">Edit</button>
-                    <button onClick={() => handleDelete(item.id)} className="btn bg-red-600 hover:bg-red-700 text-xs p-2">Hapus</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {news.map((item) => (
+          <NewsCard key={item.id} item={item} onEdit={handleEdit} onDelete={handleDelete} />
+        ))}
       </div>
+      
+      {news.length === 0 && !isLoading && (
+        <div className="col-span-full text-center py-12 bg-white rounded-2xl shadow-lg">
+            <p className="text-gray-500">Belum ada berita yang ditambahkan.</p>
+        </div>
+      )}
+
+      {/* Anda bisa menambahkan komponen Pagination di sini jika diperlukan */}
+
       <style jsx>{`
         .input-field {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+          display: block; width: 100%; border-radius: 0.5rem;
+          border: 1px solid #D1D5DB; background-color: #F9FAFB;
+          padding: 0.75rem; font-size: 0.875rem;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-field:focus {
+          outline: none; border-color: #3B82F6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
         }
       `}</style>
     </div>

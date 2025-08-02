@@ -1,18 +1,17 @@
 'use client'
 
 import { useState, useEffect, FormEvent, ChangeEvent, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Pagination from '@/app/ui/pagination';
 import { TableSkeleton } from '@/app/ui/skeletons';
 import { toast } from 'sonner';
-
-// Import komponen dan hook dari TipTap
-import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Toolbar } from '@/app/(admin)/dashboard/ui/Toolbar';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 // Interface untuk data Product dan Category
 interface Product {
@@ -31,10 +30,36 @@ interface Category {
   name: string;
 }
 
+// Komponen Card Produk yang baru dan responsif
+function ProductCard({ product, onEdit, onDelete }: { product: Product, onEdit: (product: Product) => void, onDelete: (id: number) => void }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+      <div className="relative">
+        <Image src={product.imageUrl} alt={product.name} width={400} height={250} className="w-full h-48 object-cover"/>
+        <span className="absolute top-3 right-3 bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">{product.category?.name || 'N/A'}</span>
+      </div>
+      <div className="p-5">
+        <h3 className="font-bold text-lg text-gray-800 truncate">{product.name}</h3>
+        <p className="text-blue-600 font-semibold text-xl mt-1 mb-3">Rp{product.price.toLocaleString('id-ID')}</p>
+        <div className="flex justify-between items-center text-sm text-gray-500">
+          <span>Stok: <span className="font-medium text-gray-800">{product.stock}</span></span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => onEdit(product)} className="p-2 rounded-full hover:bg-gray-100 transition-colors" title="Edit Produk">
+              <PencilIcon className="w-5 h-5 text-gray-600"/>
+            </button>
+            <button onClick={() => onDelete(product.id)} className="p-2 rounded-full hover:bg-red-100 transition-colors" title="Hapus Produk">
+              <TrashIcon className="w-5 h-5 text-red-500"/>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Komponen utama dipisahkan untuk menggunakan Suspense
 function ProductsManagementComponent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   // State untuk data dan UI
   const [products, setProducts] = useState<Product[]>([]);
@@ -73,21 +98,20 @@ function ProductsManagementComponent() {
     },
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl focus:outline-none w-full input-field min-h-[200px] p-2',
+        class: 'prose max-w-none focus:outline-none w-full input-field min-h-[150px] p-2',
       },
     },
-    // Pastikan ini ditambahkan agar editor tidak langsung dirender di server
     immediatelyRender: false,
   });
 
-  // Sinkronisasi konten editor saat formData.description berubah
+  // Sinkronisasi konten editor
   useEffect(() => {
     if (editor && editor.getHTML() !== formData.description) {
       editor.commands.setContent(formData.description);
     }
   }, [formData.description, editor]);
 
-  // useEffect sekarang bergantung pada searchParams (perubahan URL)
+  // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -101,15 +125,8 @@ function ProductsManagementComponent() {
 
         setProducts(productsData.products);
         setTotalPages(productsData.totalPages);
-
-        if (categoriesData && Array.isArray(categoriesData.categories)) {
-          setCategories(categoriesData.categories);
-        } else if (Array.isArray(categoriesData)) {
-          setCategories(categoriesData);
-        }
-
+        setCategories(Array.isArray(categoriesData.categories) ? categoriesData.categories : (Array.isArray(categoriesData) ? categoriesData : []));
       } catch (error) {
-        console.error("Gagal mengambil data:", error);
         toast.error("Gagal memuat data produk atau kategori.");
       } finally {
         setIsLoading(false);
@@ -127,7 +144,6 @@ function ProductsManagementComponent() {
       setProducts(productsData.products);
       setTotalPages(productsData.totalPages);
     } catch (error) {
-        console.error("Gagal memuat ulang data:", error);
         toast.error("Gagal memuat ulang data produk.");
     } finally {
         setIsLoading(false);
@@ -164,7 +180,6 @@ function ProductsManagementComponent() {
           throw new Error('Gagal mengunggah gambar.');
         }
       } catch (error) {
-        console.error(error);
         toast.error('Terjadi kesalahan saat mengunggah gambar.');
         setUploading(false);
         return;
@@ -197,7 +212,6 @@ function ProductsManagementComponent() {
       resetForm();
       await refetchCurrentPage();
     } catch (error) {
-      console.error("Gagal menyimpan produk:", error);
       toast.error('Gagal menyimpan produk.');
     } finally {
       setUploading(false);
@@ -214,7 +228,6 @@ function ProductsManagementComponent() {
             toast.success('Produk berhasil dihapus.');
             await refetchCurrentPage();
           } catch (error) {
-            console.error("Gagal menghapus produk:", error);
             toast.error('Gagal menghapus produk.');
           }
         },
@@ -238,6 +251,7 @@ function ProductsManagementComponent() {
     });
     setShowForm(true);
     setSelectedFile(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   const resetForm = () => {
@@ -253,110 +267,100 @@ function ProductsManagementComponent() {
   }
 
   return (
-    <div>
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1>Manajemen Produk</h1>
-            <p>Kelola semua produk di toko Anda.</p>
-          </div>
-          <button className="btn" onClick={() => { setShowForm(!showForm); if (isEditing) resetForm(); }}>
-            {showForm && !isEditing ? 'Batal' : 'Tambah Produk Baru'}
-          </button>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Manajemen Produk</h1>
+          <p className="text-gray-500 mt-1">Kelola semua produk di toko Anda.</p>
         </div>
+        <button className="btn flex items-center gap-2" onClick={() => { setShowForm(!showForm); if (isEditing) resetForm(); }}>
+          <PlusIcon className="w-5 h-5" />
+          <span>{showForm && !isEditing ? 'Batal' : 'Tambah Produk'}</span>
+        </button>
       </div>
 
       {showForm && (
-        <div className="card">
-          <h2>{isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}</h2>
-          <form onSubmit={handleSubmit}>
-            {/* Input lainnya tetap sama */}
-            <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Nama Produk" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-            <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Harga" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-            <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} placeholder="Jumlah Stok" required style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-            <select
-              value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-              required
-              style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
-            >
-              <option value="" disabled>Pilih Kategori</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+        <div className="bg-white p-8 rounded-2xl shadow-lg animate-fade-in">
+          <h2 className="text-2xl font-semibold mb-6">{isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Nama Produk" required className="input-field" />
+              <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} required className="input-field">
+                <option value="" disabled>Pilih Kategori</option>
+                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              </select>
+              <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Harga" required className="input-field" />
+              <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} placeholder="Jumlah Stok" required className="input-field" />
+            </div>
+
             <div>
-              <label className="block mb-2 font-medium">Deskripsi Produk</label>
-              <div className="border border-gray-200 rounded-lg">
+              <label className="block mb-2 font-medium text-gray-700">Deskripsi Produk</label>
+              <div className="border border-gray-300 rounded-lg">
                 <Toolbar editor={editor} />
                 <EditorContent editor={editor} />
               </div>
             </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Gambar Produk</label>
-              <input type="file" onChange={handleFileChange} accept="image/*" style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px' }} />
-              {isEditing && formData.imageUrl && 
-                <div style={{ marginTop: '10px' }}>
-                    <p>Gambar saat ini:</p>
-                    <Image src={formData.imageUrl} alt="Gambar produk saat ini" width={80} height={80} style={{ borderRadius: '8px', objectFit: 'cover' }}/>
-                </div>
-              }
+
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Gambar Produk</label>
+              <div className="flex items-center gap-4">
+                  {(formData.imageUrl || selectedFile) && (
+                      <Image src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} alt="Preview" width={80} height={80} className="rounded-lg object-cover" />
+                  )}
+                  <input type="file" onChange={handleFileChange} accept="image/*" className="input-field flex-1" />
+              </div>
             </div>
-            <button type="submit" className="btn" disabled={uploading}>
-              {uploading ? 'Menyimpan...' : (isEditing ? 'Update' : 'Simpan')}
-            </button>
-            {isEditing && <button type="button" onClick={resetForm} className="btn" style={{marginLeft: '10px', background: '#555'}}>Batal</button>}
+            
+            <div className="flex justify-end gap-4 pt-4">
+              <button type="button" onClick={resetForm} className="btn bg-gray-200 text-gray-800 hover:bg-gray-300">Batal</button>
+              <button type="submit" className="btn" disabled={uploading}>
+                {uploading ? 'Menyimpan...' : (isEditing ? 'Update Produk' : 'Simpan Produk')}
+              </button>
+            </div>
           </form>
         </div>
       )}
 
-      <div className="card">
-        <h3>Daftar Produk</h3>
-        <div style={{ overflowX: 'auto', position: 'relative' }}>
-          {isLoading && <div style={{position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', display: 'grid', placeItems: 'center'}}>Memuat...</div>}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #ddd' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Gambar</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Nama</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Harga</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Stok</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Kategori</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '12px' }}>
-                    <Image src={product.imageUrl} alt={product.name} width={50} height={50} style={{ borderRadius: '8px', objectFit: 'cover' }}/>
-                  </td>
-                  <td style={{ padding: '12px' }}>{product.name}</td>
-                  <td style={{ padding: '12px' }}>Rp{product.price.toLocaleString('id-ID')}</td>
-                  <td style={{ padding: '12px' }}>{product.stock}</td>
-                  <td style={{ padding: '12px' }}>{product.category?.name || 'N/A'}</td>
-                  <td style={{ padding: '12px' }}>
-                    <button onClick={() => handleEdit(product)} className="btn" style={{ marginRight: '8px', padding: '6px 12px', fontSize: '12px' }}>Edit</button>
-                    <button onClick={() => handleDelete(product.id)} className="btn" style={{ background: '#e53e3e', borderColor: '#e53e3e', padding: '6px 12px', fontSize: '12px' }}>Hapus</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="mt-8">
-            <Pagination 
-                currentPage={currentPage}
-                totalPages={totalPages}
-            />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} onEdit={handleEdit} onDelete={handleDelete} />
+        ))}
       </div>
+      
+      {products.length === 0 && !isLoading && (
+        <div className="col-span-full text-center py-12 bg-white rounded-2xl shadow-lg">
+            <p className="text-gray-500">Belum ada produk yang ditambahkan.</p>
+        </div>
+      )}
+
+      <div className="mt-8">
+        <Pagination currentPage={currentPage} totalPages={totalPages} />
+      </div>
+
+      <style jsx>{`
+        .input-field {
+          display: block; width: 100%; border-radius: 0.5rem;
+          border: 1px solid #D1D5DB; background-color: #F9FAFB;
+          padding: 0.75rem; font-size: 0.875rem;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-field:focus {
+          outline: none; border-color: #3B82F6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
 
-// Gunakan Suspense untuk menangani pembacaan searchParams di server
+// Komponen wrapper untuk Suspense
 export default function ProductsManagementPage() {
     return (
         <Suspense fallback={<TableSkeleton />}>

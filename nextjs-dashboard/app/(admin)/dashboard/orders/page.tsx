@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { toast } from 'sonner';
+import { EyeIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 // Tipe data untuk Order
 interface Order {
@@ -16,13 +17,32 @@ interface Order {
 
 // Komponen Modal untuk menampilkan bukti bayar
 const ProofModal = ({ imageUrl, onClose }: { imageUrl: string, onClose: () => void }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
-        <div className="relative bg-white p-4 rounded-lg">
-            <button onClick={onClose} className="absolute top-2 right-2 text-2xl font-bold">&times;</button>
-            <Image src={imageUrl} alt="Bukti Pembayaran" width={400} height={600} style={{ objectFit: 'contain' }}/>
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4 animate-fade-in-fast">
+        <div className="relative bg-white p-4 rounded-lg max-w-lg w-full">
+            <button onClick={onClose} className="absolute -top-4 -right-4 bg-white rounded-full p-1 z-10 text-2xl font-bold">&times;</button>
+            <div className="relative w-full h-[80vh] max-h-[600px]">
+                 <Image src={imageUrl} alt="Bukti Pembayaran" fill style={{ objectFit: 'contain' }}/>
+            </div>
         </div>
     </div>
 );
+
+// Komponen Badge Status yang lebih baik
+const getStatusBadge = (status: string) => {
+    switch(status.toUpperCase()) {
+        case 'PAID':
+        case 'SHIPPED':
+        case 'DELIVERED':
+            return <span className="badge bg-green-100 text-green-800">Paid / Shipped</span>;
+        case 'WAITING_CONFIRMATION':
+            return <span className="badge bg-orange-100 text-orange-800">Menunggu Konfirmasi</span>;
+        case 'CANCELLED':
+            return <span className="badge bg-red-100 text-red-800">Dibatalkan</span>;
+        case 'PENDING':
+        default:
+            return <span className="badge bg-yellow-100 text-yellow-800">Pending</span>;
+    }
+};
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -35,7 +55,6 @@ export default function OrdersPage() {
       const res = await fetch('/api/orders');
       if (!res.ok) throw new Error("Gagal mengambil data pesanan.");
       const data = await res.json();
-      // Pastikan untuk mengambil array 'orders' dari objek response
       if(data && Array.isArray(data.orders)) {
         setOrders(data.orders);
       } else {
@@ -43,6 +62,7 @@ export default function OrdersPage() {
       }
     } catch (error) {
       console.error(error);
+      toast.error("Gagal memuat data pesanan.");
     } finally {
       setIsLoading(false);
     }
@@ -53,107 +73,117 @@ export default function OrdersPage() {
   }, []);
 
   const handleUpdateStatus = async (orderId: number, newStatus: 'PAID' | 'CANCELLED') => {
-    const confirmationText = newStatus === 'PAID' 
-      ? 'Apakah Anda yakin ingin mengonfirmasi pembayaran ini?'
-      : 'Apakah Anda yakin ingin membatalkan pesanan ini?';
-
-    if (confirm(confirmationText)) {
-      try {
-        await fetch(`/api/orders/${orderId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        });
-        fetchOrders(); // Refresh data
-      } catch (error) {
-        console.error("Gagal update status:", error);
-        alert('Gagal memperbarui status pesanan.');
-      }
-    }
+    const isConfirming = newStatus === 'PAID';
+    toast(`Apakah Anda yakin ingin ${isConfirming ? 'mengonfirmasi' : 'membatalkan'} pesanan ini?`, {
+        action: {
+            label: isConfirming ? 'Konfirmasi' : 'Batalkan',
+            onClick: async () => {
+                try {
+                    await fetch(`/api/orders/${orderId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: newStatus }),
+                    });
+                    toast.success('Status pesanan berhasil diperbarui!');
+                    fetchOrders();
+                } catch (error) {
+                    toast.error('Gagal memperbarui status pesanan.');
+                }
+            }
+        },
+        cancel: { 
+            label: 'Tutup',
+            onClick: () => {} // <-- INI PERBAIKANNYA
+        }
+    });
   };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch(status) {
-        case 'PAID':
-        case 'SHIPPED':
-        case 'DELIVERED':
-            return '#22c55e'; // Hijau
-        case 'WAITING_CONFIRMATION':
-            return '#f97316'; // Oranye
-        case 'CANCELLED':
-            return '#ef4444'; // Merah
-        case 'PENDING':
-        default:
-            return '#f59e0b'; // Kuning
-    }
-  };
-
 
   if (isLoading) return <p>Memuat data pesanan...</p>;
 
   return (
-    <div className="w-full">
-      <div className="card">
-        <h1>Manajemen Pesanan</h1>
-        <p>Lacak dan kelola semua pesanan yang masuk dari pelanggan.</p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800">Manajemen Pesanan</h1>
+        <p className="text-gray-500 mt-1">Lacak dan kelola semua pesanan yang masuk dari pelanggan.</p>
       </div>
 
-      <div className="card">
-        <h3>Daftar Pesanan</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #ddd' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Order ID</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Pelanggan</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Tanggal</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Total</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
-                <th style={{ padding: '12px', textAlign: 'center' }}>Aksi</th>
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm whitespace-nowrap">
+            <thead className="tracking-wider border-b-2 border-gray-200 bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">Order ID</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">Pelanggan</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">Tanggal</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">Total</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600">Status</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-gray-600 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '12px' }}>#{order.id}</td>
-                  <td style={{ padding: '12px' }}>{order.user.name}</td>
-                  <td style={{ padding: '12px' }}>{new Date(order.createdAt).toLocaleDateString('id-ID')}</td>
-                  <td style={{ padding: '12px' }}>Rp{order.totalAmount.toLocaleString('id-ID')}</td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{ 
-                        padding: '4px 12px', 
-                        borderRadius: '12px', 
-                        fontSize: '12px',
-                        color: '#fff',
-                        backgroundColor: getStatusBadgeColor(order.status)
-                    }}>
-                        {order.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                     {order.paymentProof && (
-                        <button onClick={() => setViewingProof(order.paymentProof)} className="btn text-xs p-2 mr-2">
-                            Cek Struk
-                        </button>
-                     )}
-                     {order.status === 'WAITING_CONFIRMATION' && (
-                        <>
-                            <button onClick={() => handleUpdateStatus(order.id, 'PAID')} className="btn bg-green-500 hover:bg-green-600 text-xs p-2 mr-2">
-                                Konfirmasi
-                            </button>
-                             <button onClick={() => handleUpdateStatus(order.id, 'CANCELLED')} className="btn bg-red-500 hover:bg-red-600 text-xs p-2">
-                                Batalkan
-                            </button>
-                        </>
-                     )}
+                <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-blue-600">#{order.id}</td>
+                  <td className="px-6 py-4 text-gray-800">{order.user.name}</td>
+                  <td className="px-6 py-4 text-gray-600">{new Date(order.createdAt).toLocaleDateString('id-ID')}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800">Rp{order.totalAmount.toLocaleString('id-ID')}</td>
+                  <td className="px-6 py-4">{getStatusBadge(order.status)}</td>
+                  <td className="px-6 py-4">
+                     <div className="flex justify-center items-center gap-2">
+                        {order.paymentProof && (
+                           <button onClick={() => setViewingProof(order.paymentProof)} className="action-btn bg-gray-100 text-gray-700 hover:bg-gray-200" title="Lihat Bukti Bayar">
+                               <EyeIcon className="w-5 h-5"/>
+                           </button>
+                        )}
+                        {order.status === 'WAITING_CONFIRMATION' && (
+                           <>
+                               <button onClick={() => handleUpdateStatus(order.id, 'PAID')} className="action-btn bg-green-100 text-green-700 hover:bg-green-200" title="Konfirmasi Pembayaran">
+                                   <CheckCircleIcon className="w-5 h-5"/>
+                               </button>
+                                <button onClick={() => handleUpdateStatus(order.id, 'CANCELLED')} className="action-btn bg-red-100 text-red-700 hover:bg-red-200" title="Batalkan Pesanan">
+                                   <XCircleIcon className="w-5 h-5"/>
+                               </button>
+                           </>
+                        )}
+                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {orders.length === 0 && !isLoading && (
+            <div className="text-center p-8 text-gray-500">
+                <p>Belum ada pesanan yang masuk.</p>
+            </div>
+          )}
         </div>
       </div>
       {viewingProof && <ProofModal imageUrl={viewingProof} onClose={() => setViewingProof(null)} />}
+      <style jsx>{`
+        .badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 9999px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        .action-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border-radius: 9999px;
+          transition: background-color 0.2s;
+        }
+        @keyframes fade-in-fast {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in-fast {
+            animation: fade-in-fast 0.2s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
