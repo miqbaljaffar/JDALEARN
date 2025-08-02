@@ -33,6 +33,13 @@ export default function CheckoutPage() {
   }, [session]);
 
   const handlePlaceOrder = async () => {
+    // Cek status sesi sebelum melakukan apapun
+    if (status === 'unauthenticated') {
+      toast.error('Anda harus login untuk melanjutkan pesanan.');
+      router.push('/login'); 
+      return; 
+    }
+
     if (!shippingAddress.trim()) {
       toast.error('Alamat pengiriman wajib diisi.');
       return;

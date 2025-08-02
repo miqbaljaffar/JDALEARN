@@ -1,23 +1,18 @@
-// app/(site)/products/[id]/page.tsx
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { unstable_cache } from 'next/cache';
 import { revalidatePath } from 'next/cache';
-
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth';
-
 import AddToCartButton from '@/app/ui/products/AddToCartButton';
 import BuyNowButton from '@/app/ui/products/BuyNowButton';
 import StarRating from '@/app/ui/products/StarRating';
 import ReviewForm from '@/app/ui/products/ReviewForm';
 
 // --- Tipe Data untuk Review ---
-// Definisikan tipe untuk objek review agar bisa digunakan ulang
 interface Review {
   id: number;
   rating: number;
@@ -29,7 +24,7 @@ interface Review {
 }
 
 
-// --- DATA FETCHING ---
+// --- DATA FETCHING (tetap sama) ---
 const getProductData = unstable_cache(
   async (id: number) => {
     const product = await prisma.product.findUnique({
@@ -61,7 +56,7 @@ const getProductData = unstable_cache(
 );
 
 
-// --- METADATA GENERATION ---
+// --- METADATA GENERATION (tetap sama) ---
 type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -108,6 +103,7 @@ export default async function ProductDetail({ params, searchParams }: Props) {
 
   const { product, totalReviews, averageRating } = await getProductData(productId);
   const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role;
   const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   let canReview = false;
@@ -176,6 +172,7 @@ export default async function ProductDetail({ params, searchParams }: Props) {
                 }}
                 className="btn flex-1"
                 disabled={product.stock === 0}
+                userRole={userRole} 
               >
                 {product.stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
               </AddToCartButton>
@@ -188,6 +185,7 @@ export default async function ProductDetail({ params, searchParams }: Props) {
                 }}
                 className="btn flex-1 bg-gray-800 hover:bg-gray-700"
                 disabled={product.stock === 0}
+                userRole={userRole} 
               >
                 {product.stock === 0 ? 'Stok Habis' : 'Beli Sekarang'}
               </BuyNowButton>
@@ -212,7 +210,6 @@ export default async function ProductDetail({ params, searchParams }: Props) {
         <h2 className="text-2xl font-bold mb-6">Ulasan Pelanggan ({totalReviews})</h2>
         <div className="space-y-6">
           {totalReviews > 0 ? (
-            // Berikan tipe eksplisit 'Review' pada parameter review
             product.reviews.map((review: Review) => (
               <div key={review.id} className="border-b pb-4 last:border-b-0">
                 <div className="flex items-center mb-2">

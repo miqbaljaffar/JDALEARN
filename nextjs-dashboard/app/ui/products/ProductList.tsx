@@ -7,8 +7,6 @@ import AddToCartButton from '@/app/ui/products/AddToCartButton';
 import StarRating from '@/app/ui/products/StarRating';
 import { ShoppingBagIcon } from '@heroicons/react/24/outline';
 
-
-// Interface untuk props
 interface Product {
   id: number;
   name: string;
@@ -28,9 +26,10 @@ interface Category {
 interface ProductListProps {
   products: Product[];
   categories: Category[];
+  userRole?: string | null;
 }
 
-export default function ProductList({ products, categories }: ProductListProps) {
+export default function ProductList({ products, categories, userRole }: ProductListProps) {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
@@ -72,7 +71,6 @@ export default function ProductList({ products, categories }: ProductListProps) 
                     {product.name}
                   </h3>
                   
-                  {/* Tampilkan Rating dan Jumlah Terjual */}
                   <div className="my-2 flex items-center justify-between text-sm text-gray-500">
                     <StarRating rating={product.averageRating} />
                     <div className="flex items-center gap-1">
@@ -94,6 +92,7 @@ export default function ProductList({ products, categories }: ProductListProps) 
                       }}
                       className="btn w-full"
                       disabled={product.stock === 0}
+                      userRole={userRole} 
                     >
                       {product.stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
                     </AddToCartButton>

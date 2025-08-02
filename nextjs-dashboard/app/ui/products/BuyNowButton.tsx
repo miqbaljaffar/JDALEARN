@@ -15,42 +15,47 @@ interface Product {
 
 // Definisikan tipe untuk props komponen
 interface BuyNowButtonProps {
-  product: Product; // Menerima objek produk lengkap
+  product: Product;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
   disabled?: boolean;
+  userRole?: string; 
 }
 
-export default function BuyNowButton({ product, className, style, children, disabled }: BuyNowButtonProps) {
+export default function BuyNowButton({ product, className, style, children, disabled, userRole }: BuyNowButtonProps) {
   const router = useRouter();
   const { status } = useSession();
   
-  // Ambil aksi `addToCart` dari store
   const addToCart = useCartStore((state) => state.addToCart); 
 
   const handleBuyNow = () => {
+    // Tambahkan pengecekan role di awal
+    if (userRole === 'ADMIN') {
+        toast.info("Admin tidak dapat membeli produk.");
+        return;
+    }
+
     if (disabled) {
         toast.error('Stok produk ini sudah habis.');
         return;
     }
     
-    // Pengecekan sesi tetap diperlukan untuk memastikan hanya pengguna yang login
-    // yang dapat melanjutkan ke halaman checkout.
     if (status === 'unauthenticated') {
       router.push('/login');
       return;
     }
 
-    // 1. Panggil aksi `addToCart` dari store
     addToCart(product);
     
-    // 2. Langsung arahkan ke halaman checkout
     router.push('/checkout');
   };
 
+  // Logika disable: disable jika prop `disabled` true ATAU jika role adalah ADMIN
+  const isButtonDisabled = disabled || userRole === 'ADMIN';
+
   return (
-    <button onClick={handleBuyNow} className={className} style={style} disabled={disabled}>
+    <button onClick={handleBuyNow} className={className} style={style} disabled={isButtonDisabled}>
       {children}
     </button>
   );

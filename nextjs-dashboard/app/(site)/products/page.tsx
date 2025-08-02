@@ -5,8 +5,11 @@ import { Suspense } from 'react';
 import Search from '@/app/ui/search';
 import { TableSkeleton } from '@/app/ui/skeletons';
 import SortDropdown from '@/app/ui/products/SortDropdown';
+// Impor untuk mendapatkan sesi di server
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-// Definisikan tipe untuk kejelasan
+// Tipe data (tetap sama)
 interface Product {
   id: number;
   name: string;
@@ -23,13 +26,13 @@ interface Category {
   name: string;
 }
 
-// Definisikan tipe untuk searchParams
 interface SearchParams {
   [key: string]: string | string[] | undefined;
 }
 
 export const dynamic = 'force-dynamic';
 
+// Fungsi getProductsAndCategories (tetap sama)
 async function getProductsAndCategories(searchParamsPromise: Promise<SearchParams>) {
   const searchParams = await searchParamsPromise;
 
@@ -112,8 +115,6 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
     prisma.category.findMany(),
   ]);
 
-  // --- BAGIAN YANG DIPERBAIKI ---
-  // Olah data mentah menjadi data yang siap ditampilkan
   const productsWithStats = productsData.map((p: any) => {
     const totalReviews = p.reviews.length;
     const averageRating =
@@ -123,7 +124,6 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
 
     const salesCount = p.orderItems.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0);
     
-    // Hapus data relasi yang tidak perlu dikirim ke client
     const { reviews, orderItems, ...product } = p;
 
     return {
@@ -134,7 +134,7 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
   });
 
   return {
-    products: productsWithStats, // Kembalikan data yang sudah diolah
+    products: productsWithStats,
     totalPages: Math.ceil(totalProducts / limit),
     categories,
     currentPage,
@@ -143,8 +143,14 @@ async function getProductsAndCategories(searchParamsPromise: Promise<SearchParam
 
 // Komponen Halaman Utama (Server Component)
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) { 
-  const { products, totalPages, categories, currentPage } =
-    await getProductsAndCategories(searchParams);
+  // Ambil data produk DAN sesi pengguna secara bersamaan
+  const [data, session] = await Promise.all([
+    getProductsAndCategories(searchParams),
+    getServerSession(authOptions)
+  ]);
+  
+  const { products, totalPages, categories, currentPage } = data;
+  const userRole = session?.user?.role; // Dapatkan role pengguna
 
   return (
     <div className="space-y-8">
@@ -166,7 +172,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </div>
 
           <Suspense fallback={<ProductGridSkeleton />}>
-            <ProductList products={products} categories={categories} />
+            <ProductList products={products} categories={categories} userRole={userRole} />
           </Suspense>
 
           <Pagination currentPage={currentPage} totalPages={totalPages} />
@@ -175,11 +181,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   );
 }
 
-// Skeleton untuk Grid Produk
+// Skeleton (tetap sama)
 function ProductGridSkeleton() {
     return (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
-            {/* Filter Skeleton */}
             <div className="card p-5 hidden lg:block">
                 <div className="h-6 w-1/3 bg-gray-200 rounded animate-pulse mb-4"></div>
                 <div className="space-y-3 mt-4">
@@ -188,7 +193,6 @@ function ProductGridSkeleton() {
                     <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse"></div>
                 </div>
             </div>
-            {/* Product List Skeleton */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
                     <div key={i} className="bg-white rounded-lg shadow-md p-4">
