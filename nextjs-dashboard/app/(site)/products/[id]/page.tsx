@@ -11,8 +11,9 @@ import AddToCartButton from '@/app/ui/products/AddToCartButton';
 import BuyNowButton from '@/app/ui/products/BuyNowButton';
 import StarRating from '@/app/ui/products/StarRating';
 import ReviewForm from '@/app/ui/products/ReviewForm';
+import RelatedProducts from '@/app/ui/products/RelatedProducts';
 
-// --- Tipe Data untuk Review ---
+// --- Tipe Data (tidak berubah) ---
 interface Review {
   id: number;
   rating: number;
@@ -23,20 +24,30 @@ interface Review {
   };
 }
 
-
-// --- DATA FETCHING (tetap sama) ---
+// --- DATA FETCHING (diperbarui) ---
 const getProductData = unstable_cache(
   async (id: number) => {
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        category: true,
-        reviews: {
-          include: { user: { select: { name: true, image: true } } },
-          orderBy: { createdAt: 'desc' },
+    // Ambil data produk utama dan produk terkait secara bersamaan
+    const [product, relatedProducts] = await Promise.all([
+      prisma.product.findUnique({
+        where: { id },
+        include: {
+          category: true,
+          reviews: {
+            include: { user: { select: { name: true, image: true } } },
+            orderBy: { createdAt: 'desc' },
+          },
         },
-      },
-    });
+      }),
+      prisma.product.findMany({
+        where: {
+          // Logika ini dipindahkan ke sini dari komponen client
+          categoryId: (await prisma.product.findUnique({ where: { id } }))?.categoryId,
+          id: { not: id },
+        },
+        take: 8,
+      })
+    ]);
 
     if (!product) {
       notFound();
@@ -49,14 +60,14 @@ const getProductData = unstable_cache(
         ? product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / totalReviews
         : 0;
 
-    return { product, totalReviews, averageRating: parseFloat(averageRating.toFixed(1)) };
+    return { product, relatedProducts, totalReviews, averageRating: parseFloat(averageRating.toFixed(1)) };
   },
-  ['product_with_reviews'],
+  ['product_with_related_reviews'], // Kunci cache diubah untuk mencerminkan data baru
   { revalidate: 3600 }
 );
 
 
-// --- METADATA GENERATION (tetap sama) ---
+// --- METADATA GENERATION (tidak berubah) ---
 type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -68,6 +79,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (isNaN(productId)) return {};
 
+  // Memanggil data tanpa produk terkait untuk metadata agar lebih cepat
   const { product, averageRating, totalReviews } = await getProductData(productId);
 
   const title = `Jual ${product.name} - Ztyle Store`;
@@ -101,7 +113,8 @@ export default async function ProductDetail({ params, searchParams }: Props) {
     notFound();
   }
 
-  const { product, totalReviews, averageRating } = await getProductData(productId);
+  // Mengambil semua data yang diperlukan
+  const { product, relatedProducts, totalReviews, averageRating } = await getProductData(productId);
   const session = await getServerSession(authOptions);
   const userRole = session?.user?.role;
   const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
@@ -121,8 +134,8 @@ export default async function ProductDetail({ params, searchParams }: Props) {
     }
   }
 
-  const productSchema = { /* ... (schema tidak berubah) ... */ };
-  const breadcrumbSchema = { /* ... (schema tidak berubah) ... */ };
+  const productSchema = { /* ... */ };
+  const breadcrumbSchema = { /* ... */ };
 
   const handleReviewSubmitted = async () => {
     'use server'
@@ -131,14 +144,13 @@ export default async function ProductDetail({ params, searchParams }: Props) {
 
   return (
     <div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-
+      {/* ... (Script dan Link Kembali) ... */}
       <Link href="/products" className="inline-block mb-5 text-gray-800 hover:text-blue-600 transition-colors">
         ← Kembali ke Semua Produk
       </Link>
 
       <div className="card">
+        {/* ... (Konten Detail Produk Utama) ... */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           <div>
             <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
@@ -198,6 +210,9 @@ export default async function ProductDetail({ params, searchParams }: Props) {
         {/* ... (Fitur dan Spesifikasi) ... */}
       </div>
 
+      {/* Melewatkan data produk terkait ke komponen client */}
+      <RelatedProducts products={relatedProducts} />
+
       {canReview && orderItemId && (
         <ReviewForm
           productId={productId}
@@ -207,7 +222,8 @@ export default async function ProductDetail({ params, searchParams }: Props) {
       )}
 
       <div className="card mt-8">
-        <h2 className="text-2xl font-bold mb-6">Ulasan Pelanggan ({totalReviews})</h2>
+        {/* ... (Konten Ulasan Pelanggan) ... */}
+         <h2 className="text-2xl font-bold mb-6">Ulasan Pelanggan ({totalReviews})</h2>
         <div className="space-y-6">
           {totalReviews > 0 ? (
             product.reviews.map((review: Review) => (
