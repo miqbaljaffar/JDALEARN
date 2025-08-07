@@ -1,6 +1,3 @@
-// app/ui/skeletons.tsx
-
-// Skeleton untuk Card Statistik (Versi Baru)
 const CardSkeleton = () => (
   <div className="bg-white rounded-2xl shadow-lg p-6">
     <div className="flex items-start gap-5">
@@ -14,7 +11,6 @@ const CardSkeleton = () => (
   </div>
 );
 
-// Skeleton untuk Chart Card (Harus didefinisikan sebelum DashboardSkeleton)
 const ChartCardSkeleton = () => (
     <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="h-6 w-1/2 bg-gray-200 rounded animate-pulse mb-4"></div>
@@ -22,8 +18,6 @@ const ChartCardSkeleton = () => (
     </div>
 );
 
-
-// Skeleton untuk Tabel (Tidak berubah)
 const TableRowSkeleton = () => (
   <tr className="w-full border-b border-gray-100 last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg">
     <td className="relative overflow-hidden whitespace-nowrap py-3 pl-6 pr-3">
@@ -62,34 +56,34 @@ export const TableSkeleton = () => (
   </div>
 );
 
-// Skeleton untuk Halaman Detail Produk (Tidak berubah)
-export const ProductDetailSkeleton = () => (
-    <div>
-        <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-5"></div>
-        <div className="card">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-                <div>
-                    <div className="relative w-full h-96 rounded-lg bg-gray-200 animate-pulse"></div>
-                    <div className="h-8 w-32 bg-gray-200 rounded-full mt-6 animate-pulse"></div>
-                </div>
-                <div>
-                    <div className="h-10 w-3/4 bg-gray-200 rounded animate-pulse mb-3"></div>
-                    <div className="h-8 w-1/2 bg-gray-200 rounded animate-pulse mb-4"></div>
-                    <div className="h-5 w-full bg-gray-200 rounded animate-pulse mb-2"></div>
-                    <div className="h-5 w-5/6 bg-gray-200 rounded animate-pulse mb-6"></div>
-                    <div className="h-12 w-1/3 bg-gray-200 rounded animate-pulse mb-8"></div>
-                    <div className="flex items-center gap-4">
-                        <div className="h-12 flex-1 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-12 flex-1 bg-gray-300 rounded animate-pulse"></div>
-                    </div>
-                </div>
-            </div>
+const ProductCardSkeleton = () => (
+  <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="h-48 w-full bg-gray-200 animate-pulse"></div>
+    <div className="p-5">
+      <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse mb-2"></div>
+      <div className="h-7 w-1/2 bg-gray-200 rounded animate-pulse mb-3"></div>
+      <div className="flex justify-between items-center">
+        <div className="h-4 w-1/4 bg-gray-200 rounded animate-pulse"></div>
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
+          <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
         </div>
+      </div>
     </div>
+  </div>
 );
 
+export const ProductsGridSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <ProductCardSkeleton />
+    <ProductCardSkeleton />
+    <ProductCardSkeleton />
+    <ProductCardSkeleton />
+    <ProductCardSkeleton />
+    <ProductCardSkeleton />
+  </div>
+);
 
-// Skeleton untuk Dashboard (Versi Baru)
 export const DashboardSkeleton = () => {
   return (
     <div className="space-y-8">

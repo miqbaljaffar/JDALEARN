@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent, ChangeEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Pagination from '@/app/ui/pagination';
-import { TableSkeleton } from '@/app/ui/skeletons';
+import { ProductsGridSkeleton } from '@/app/ui/skeletons';
 import { toast } from 'sonner';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -263,7 +263,7 @@ function ProductsManagementComponent() {
   };
 
   if (isLoading && products.length === 0) {
-    return <TableSkeleton />;
+    return <ProductsGridSkeleton  />;
   }
 
   return (
@@ -369,7 +369,7 @@ function ProductsManagementComponent() {
 // Komponen wrapper untuk Suspense
 export default function ProductsManagementPage() {
     return (
-        <Suspense fallback={<TableSkeleton />}>
+        <Suspense fallback={<ProductsGridSkeleton  />}>
             <ProductsManagementComponent />
         </Suspense>
     )
