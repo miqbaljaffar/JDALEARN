@@ -304,10 +304,16 @@ function ProductsManagementComponent() {
             <div>
               <label className="block mb-2 font-medium text-gray-700">Gambar Produk</label>
               <div className="flex items-center gap-4">
-                  {(formData.imageUrl || selectedFile) && (
-                      <Image src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} alt="Preview" width={80} height={80} className="rounded-lg object-cover" />
-                  )}
-                  <input type="file" onChange={handleFileChange} accept="image/*" className="input-field flex-1" />
+                {(selectedFile || (isEditing && formData.imageUrl)) && (
+                  <Image 
+                    src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} 
+                    alt="Preview" 
+                    width={80} 
+                    height={80} 
+                    className="rounded-lg object-cover" 
+                  />
+                )}
+                <input type="file" onChange={handleFileChange} accept="image/*" className="input-field flex-1" />
               </div>
             </div>
             

@@ -264,8 +264,14 @@ export default function NewsManagementPage() {
             <div>
               <label className="block mb-2 font-medium text-gray-700">Gambar Berita</label>
               <div className="flex items-center gap-4">
-                {(formData.imageUrl || selectedFile) && (
-                  <Image src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} alt="Preview" width={80} height={80} className="rounded-lg object-cover" />
+                {(selectedFile || (isEditing && formData.imageUrl)) && (
+                  <Image 
+                    src={selectedFile ? URL.createObjectURL(selectedFile) : formData.imageUrl} 
+                    alt="Preview" 
+                    width={80} 
+                    height={80} 
+                    className="rounded-lg object-cover" 
+                  />
                 )}
                 <input type="file" onChange={handleFileChange} accept="image/*" className="input-field flex-1" />
               </div>
