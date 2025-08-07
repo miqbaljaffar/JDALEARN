@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sanitizeObject } from '@/lib/sanitizer';
+import { revalidatePath } from 'next/cache';
 
 // Definisikan tipe untuk params
 interface RouteParams {
   id: string;
 }
 
-// Mengambil satu produk berdasarkan ID
+// Mengambil satu produk berdasarkan ID 
 export async function GET(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
     const { id: productId } = await params;
@@ -43,11 +44,15 @@ export async function PUT(request: Request, { params }: { params: Promise<RouteP
         stock: sanitizedData.stock,
         imageUrl: sanitizedData.imageUrl,
         description: sanitizedData.description,
-        features: sanitizedData.features,
-        specifications: sanitizedData.specifications,
         categoryId: sanitizedData.categoryId,
+        features: sanitizedData.features, 
+        specifications: sanitizedData.specifications, 
       },
     });
+
+    revalidatePath('/products');
+    revalidatePath(`/products/${id}`);
+
     return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error("Failed to update product:", error);
@@ -60,9 +65,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<Rou
   try {
     const { id: productId } = await params;
     const id = parseInt(productId);
+    
     await prisma.product.delete({
       where: { id },
     });
+
+    revalidatePath('/products');
+    revalidatePath(`/products/${id}`);
+
     return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error("Failed to delete product:", error);
