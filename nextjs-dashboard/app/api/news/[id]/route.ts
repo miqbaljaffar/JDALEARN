@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sanitizeObject } from '@/lib/sanitizer';
+import { revalidatePath } from 'next/cache';
 
-// Definisikan tipe untuk params
+// Definisikan tipe untuk params agar lebih aman
 interface RouteParams {
   id: string;
 }
 
-// Mengupdate berita berdasarkan ID
+/**
+ * Mengupdate berita berdasarkan ID.
+ * Setelah berhasil, cache untuk halaman daftar dan detail berita akan dihapus.
+ */
 export async function PUT(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
     const { id: newsId } = await params;
@@ -26,6 +30,11 @@ export async function PUT(request: Request, { params }: { params: Promise<RouteP
         slug: sanitizedData.slug,
       },
     });
+
+    // Revalidasi (bersihkan cache) untuk path yang relevan
+    revalidatePath('/news'); // Membersihkan cache halaman daftar berita
+    revalidatePath(`/news/${sanitizedData.slug}`); // Membersihkan cache halaman detail yang diupdate
+
     return NextResponse.json(updatedNews);
   } catch (error) {
     console.error("Gagal mengupdate berita:", error);
@@ -33,14 +42,31 @@ export async function PUT(request: Request, { params }: { params: Promise<RouteP
   }
 }
 
-// Menghapus berita berdasarkan ID
+/**
+ * Menghapus berita berdasarkan ID.
+ * Setelah berhasil, cache untuk halaman daftar dan detail berita yang dihapus akan dibersihkan.
+ */
 export async function DELETE(request: Request, { params }: { params: Promise<RouteParams> }) {
   try {
     const { id: newsId } = await params;
     const id = parseInt(newsId);
-    await prisma.news.delete({
+
+    // Ambil data berita (terutama slug) SEBELUM dihapus
+    const newsToDelete = await prisma.news.findUnique({
       where: { id },
     });
+
+    if (newsToDelete) {
+      // Hapus berita dari database
+      await prisma.news.delete({
+        where: { id },
+      });
+
+      // Revalidasi (bersihkan cache) untuk path yang relevan
+      revalidatePath('/news'); // Membersihkan cache halaman daftar berita
+      revalidatePath(`/news/${newsToDelete.slug}`); // Membersihkan cache halaman detail yang dihapus
+    }
+
     return NextResponse.json({ message: 'Berita berhasil dihapus' }, { status: 200 });
   } catch (error) {
     console.error("Gagal menghapus berita:", error);
