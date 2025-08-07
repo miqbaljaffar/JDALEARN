@@ -178,8 +178,8 @@ export default async function NewsDetailPage({ params }: Props) {
               {/* Konten Artikel */}
               <article className="md:col-span-3">
                   <div 
-                    className="prose prose-lg max-w-none prose-p:text-gray-700 prose-headings:text-gray-900"
-                    dangerouslySetInnerHTML={{ __html: newsItem.content || '' }}
+                  className="prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{ __html: newsItem.content || '' }}
                   />
               </article>
             </div>
